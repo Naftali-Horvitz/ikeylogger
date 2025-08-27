@@ -4,6 +4,8 @@ from iwriter import IWriter
 
 
 
+
+
 class FileWriter(IWriter):
     def __init__(self, base_path="logs"):
         self.base_path = base_path
