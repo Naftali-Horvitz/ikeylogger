@@ -1,14 +1,11 @@
 import os
 from abc import ABC, abstractmethod
 from datetime import time
+import iwriter
 
 
-class IWriter(ABC):
-    @abstractmethod
-    def send_data(self, data: str, machine_name: str) -> None:
-        pass
 
-class FileWriter(IWriter):
+class FileWriter(iwriter):
     def __init__(self, base_path="logs"):
         self.base_path = base_path
         os.makedirs(base_path,exist_ok=True)
