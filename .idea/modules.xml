@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/פרויקט גמר.iml" filepath="$PROJECT_DIR$/.idea/פרויקט גמר.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/.idea/ikeylogger.iml" filepath="$PROJECT_DIR$/.idea/ikeylogger.iml" />
+>>>>>>> a8514cb3b51626e962fa6e27ad17047432bf38e7
     </modules>
   </component>
 </project>
