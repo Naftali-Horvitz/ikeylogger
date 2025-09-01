@@ -72,7 +72,6 @@ class Manager:
             except json.JSONDecodeError:
                 self.file_write(data)
 
-
 if __name__ == "__main__":
     manager = Manager()
 
