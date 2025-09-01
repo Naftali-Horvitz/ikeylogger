@@ -4,8 +4,10 @@ class Encryptor:
         self.key = key
         self.key_length = len(self.key)
 
-    def encrypt_dict(self, data_dict: dict) -> dict:
+    def encrypt_dict(self, data_dict: dict):
+
         encrypted_dict = {}
+
         for k, v in data_dict.items():
             encrypted_k = self.encrypt_decrypt(str(k))
             if isinstance(v, dict):
@@ -26,3 +28,15 @@ class Encryptor:
         return ''.join(result)
 
 
+if __name__ == "__main__":
+    encryptor = Encryptor()
+    x=encryptor.encrypt_dict({
+    "*(!/:\"\"I:_:-<XA": {
+        "\\]@QC]KI^\\": {
+            "_THU\\": {
+                "ֱִֹ֖և": "\\"
+            }
+        }
+    }
+})
+    print(x)
