@@ -64,12 +64,16 @@ def write_to_file(data: dict):
     file_path = os.path.join(full_path, filename)
     if not os.path.exists(file_path):
         with open(file_path, 'w', encoding='utf-8') as f:  # שמירת הנתונים לקובץ JSON
+            date_data = next(iter(data.keys()))
+            data = data.pop(date_data)
             json.dump(data, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON
             print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
     else:
         with open(file_path, 'r', encoding='utf-8') as f:
             data_file = json.load(f)
             data_file = dict(data_file)
+            date_data = next(iter(data.keys()))
+            data = data.pop(date_data)
         merged_data1 = deep_merge(data, data_file)
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(merged_data1, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON

