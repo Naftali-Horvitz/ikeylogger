@@ -27,6 +27,22 @@ class Manager:
     def file_write(self, data):
         self.file_writer.send_data(data, self.machine_name)
 
+    def delete_file(self,machine_name):
+        self.file_writer.delete_file(machine_name)
+
+    def file_content(self):
+        while True:
+            data = self.file_writer.read_data(self.machine_name)
+            res = self.network_writer.send_data(data,self.machine_name)
+            if res is None or res.status_code != 200:
+                print("שליחה נכשלה. שומר את הנתונים לקובץ.")
+                self.file_write(data)
+                time.sleep(3600)  # ממתין שעה
+                continue
+            print("הנתונים נשלחו בהצלחה.")
+            self.delete_file(self.machine_name)
+            time.sleep(3600)                          #ממתין שעה
+
     def manage(self):
         self.service.start()
         while True:
