@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>KeyLogger Frontend</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>KeyLogger – תצוגת נתונים</h1>
+
+  <section id="machines-section">
+    <h2>רשימת מחשבים</h2>
+    <button onclick="loadMachines()">טען מחשבים</button>
+    <ul id="machines-list"></ul>
+  </section>
+
+<section id="search-section">
+  <h2>חיפוש לפי תאריך וטווח שעות</h2>
+  <div class="search-form">
+    <label>תאריך: <input type="date" id="search-date"></label>
+    <label>משעה: <input type="time" id="search-start"></label>
+    <label>עד שעה: <input type="time" id="search-end"></label>
+    <button onclick="searchLogs()">חפש</button>
+  </div>
+</section>
+
+
+  <section id="keystrokes-section">
+    <h2>הקלדות</h2>
+    <pre id="keystrokes-output">בחר מחשב כדי להציג את ההקלדות</pre>
+  </section>
+
+
+
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import random
 from flask import Flask, request, jsonify
 from datetime import datetime
 from encryptor import Encryptor
+from flask_cors import CORS
 
 app = Flask(__name__)
 def deep_merge(source, destination):
@@ -20,6 +21,7 @@ def deep_merge(source, destination):
             # אחרת, פשוט עדכן את הערך
             destination[key] = value
     return destination
+CORS(app)
 
 LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
 @app.route('/')
