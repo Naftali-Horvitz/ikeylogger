@@ -1,13 +1,13 @@
 import os
 import json
 import random
-import time
 from flask import Flask, request, jsonify
 from datetime import datetime
 from encryptor import Encryptor
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 
 LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
 # status_listen = random.randint(0, 1)                                # אופציה לעצירת האזנה נצרך להחליף לקלט מהמשתמש
