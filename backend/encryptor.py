@@ -27,16 +27,3 @@ class Encryptor:
             result.append(chr(encrypted_char_code))
         return ''.join(result)
 
-
-if __name__ == "__main__":
-    encryptor = Encryptor()
-    x=encryptor.encrypt_dict({
-    "*(!/:\"\"I:_:-<XA": {
-        "\\]@QC]KI^\\": {
-            "_THU\\": {
-                "ֱִֹ֖և": "\\"
-            }
-        }
-    }
-})
-    print(x)

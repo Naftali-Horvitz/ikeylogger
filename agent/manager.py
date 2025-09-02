@@ -50,7 +50,6 @@ class Manager:
                         print("התקבל סטטוס עצירה מהשרת.")
                         self.stop_listening()
                     else:
-                        print(status_listen)
                         print("התקבל סטטוס המשך מהשרת.")
                         self.continue_listening()
                 else:
