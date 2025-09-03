@@ -31,14 +31,16 @@ class Manager:
         self.file_writer.delete_file(machine_name)
 
     def file_content(self):
-        while True:
-            data = self.file_writer.read_data(self.machine_name)
-            res = self.network_writer.send_data(data,self.machine_name)
-            if res is None or res.status_code != 200:
-                print("שליחה נכשלה. שומר את הנתונים לקובץ.")
-                continue
-            print("הנתונים נשלחו בהצלחה.")
-            self.delete_file(self.machine_name)
+        data = self.file_writer.read_data(self.machine_name)
+        if data is None:
+            return
+        res = self.network_writer.send_data(data,self.machine_name)
+        if res is None or res.status_code != 200:
+            print("שליחה נכשלה. שומר את הנתונים לקובץ.")
+            return
+        print("הנתונים נשלחו בהצלחה.")
+        self.delete_file(self.machine_name)
+
 
     def manage(self):
         self.service.start()
@@ -49,13 +51,13 @@ class Manager:
                 print(data)
                 encrypted_data = self.encryptor.encrypt_dict(data)                      # שלב 2: מצפין את הנתונים לפני השליחה
                 res = self.network_writer.send_data(encrypted_data, self.machine_name)  # שלב 3: מנסה לשלוח את הנתונים
+                self.file_content()
                                                                                         # בדיקת התגובה מהשרת
                 if res is None or res.status_code != 200:
                     print("שליחה נכשלה. שומר את הנתונים לקובץ.")
                     self.file_write(encrypted_data)
                     continue                                                            # ממשיך ללולאה הבאה
-                print("הנתונים נשלחו בהצלחה.")                                           # אם הגעת לכאן, הכל תקין (קוד0 200)
-
+                print("הנתונים נשלחו בהצלחה.")                                          # אם הגעת לכאן, הכל תקין (קוד0 200)
                 try:                                                                    # שלב 4: טיפול בתוכן התגובה
                     response_data = res.json()
                     status_listen = response_data.get('status_listen')                  # בודק אם נשלח סטטוס הקשבה
