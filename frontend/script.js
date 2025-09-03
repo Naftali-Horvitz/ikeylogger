@@ -261,6 +261,7 @@ $("#btn-toggle-agent").addEventListener("click", () => {
   renderAgent();
   alert(isOn ? "האזנה הופסקה." : "האזנה החלה.");
 });
+
   // לוגים
   $("#logs-date").addEventListener("change", setWeekday);
   $("#btn-fetch-logs").addEventListener("click", fetchLogs);
