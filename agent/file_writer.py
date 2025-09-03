@@ -18,15 +18,30 @@ class FileWriter(IWriter):
         if os.path.exists(file_path):         #בודק אם כבר קיים קובץ עם אותו שם
             with open(file_path, "r", encoding="utf-8") as f:
                 logs = json.load(f)            #במידה וקיים, הוא שולף את הדאטה וממיר ל דיכשנרי
+                logs = dict(logs)
+            res_data = self.deep_merge(data, logs)
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(res_data, f, indent=4, ensure_ascii=False)
         else:
-            logs = []
-            # אם אין מפתח למכונה, יוצרים dict ריק
-        logs.append(data)  # מוסיף את האובייקט החדש בסוף הרשימה
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(logs, f, indent=4, ensure_ascii=False)
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
 
+    def deep_merge(self,source, destination):
+        # מבצע מיזוג עמוק של מילונים מקוננים.
 
-    def read_data(self,machine_name:str) -> str|None:
+        for key, value in source.items():
+            if isinstance(value, dict) and key in destination and isinstance(destination[key], dict):
+                # אם גם המפתח הקיים וגם החדש הם מילונים, קרא לפונקציה בצורה רקורסיבית
+                destination[key] = self.deep_merge(value, destination[key])
+            elif isinstance(value, str) and key in destination and isinstance(destination[key], str):
+                # אם הערך קיים והוא מחרוזת, שרשר את הערך החדש לקיים
+                destination[key] += value
+            else:
+                # אחרת, פשוט עדכן את הערך
+                destination[key] = value
+        return destination
+
+    def read_data(self,machine_name:str) -> dict | None:
         filename = f"{machine_name}.json"
         file_path = os.path.join(self.base_path, filename)
         if not os.path.exists(file_path):
@@ -35,8 +50,8 @@ class FileWriter(IWriter):
             data = json.load(f)  # קורא את הקובץ וממיר למילון Python
             if not data:
                 return None
-        # המרה חזרה למחרוזת JSON
-        return json.dumps(data, indent=4, ensure_ascii=False)
+
+        return data
 
     def delete_file(self,machine_name) ->None:
         filename = f"{machine_name}.json"
