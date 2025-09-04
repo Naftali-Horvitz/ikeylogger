@@ -1,6 +1,6 @@
 class Encryptor:
 
-    def __init__(self, key = "nmrd"):
+    def __init__(self, key):
         self.key = key
         self.key_length = len(self.key)
 

