@@ -17,20 +17,6 @@
   --font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-/* ערכת נושא מינימליסטית */
-.theme-minimal {
-  --bg: #ffffff;
-  --panel: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --accent: #111827;  /* שחור שקט */
-  --accent-2: #10b981; /* ירוק עדין */
-  --radius: 8px;
-  --shadow: 0 1px 0 rgba(0,0,0,.04);
-  --focus: 0 0 0 2px rgba(17,24,39,.2);
-}
-
 /* ערכת נושא מודרנית (ברירת מחדל) */
 .theme-modern {
   --bg: #f7f7f8;
@@ -137,17 +123,11 @@ tr:hover td { background: color-mix(in oklab, var(--panel) 70%, var(--bg)); }
 .switch.on { background: color-mix(in oklab, var(--accent-2) 65%, #d1d5db); }
 .knob { position: absolute; top: 3px; inset-inline-start: 3px; width: 24px; height: 24px; background: #fff; border-radius: 50%; transition: transform .25s; box-shadow: var(--shadow); }
 .switch.on .knob { transform: translateX(-24px); /* RTL: זז שמאלה */ }
-[dir="rtl"] .switch.on .knob { transform: translateX(24px); }
 
 /* אנימציית טוסט */
 .toast { position: fixed; inset-inline-start: 24px; bottom: 24px; z-index: 50; display: grid; gap: 8px; }
 .toast .item { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); animation: slideIn .2s ease; }
 @keyframes slideIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
-
-/* דגשים למינימליסטי */
-.theme-minimal .tablink { border-radius: 8px; padding: 6px 10px; font-weight: 600; }
-.theme-minimal .card { box-shadow: none; }
-.theme-minimal header.appbar { background: #fff; }
 
 /* דגשים לניאון */
 .theme-neon .tablink { background: #0f1720; border-color: #1f2a37; color: var(--text); }

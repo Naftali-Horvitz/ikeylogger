@@ -54,6 +54,8 @@ class Manager:
 
     def file_content(self):
             data = self.file_writer.read_data(self.machine_name)
+            if data is None:
+                return
             res = self.network_writer.send_data(data,self.machine_name)
             if res is None or res.status_code != 200:
                 print("שליחה מהקובץ נכשלה הנתונים יחזרו לקובץ.")
