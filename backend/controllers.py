@@ -12,6 +12,16 @@ def handle_notifications(request):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def handle_delete_notifications(request):
+    text = request.data.decode("utf-8")
+    if not text:
+        return "No data provided", 400
+    try:
+        services.delete_notification(text)
+        return jsonify({"status": "success", "deleted": text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def handle_upload(request):
     status_listen = random.randint(0, 1)
     if not request.is_json:
