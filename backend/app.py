@@ -13,6 +13,10 @@ def home():
 def notifications():
     return controllers.handle_notifications(request)
 
+@app.post("/api/deletenotifications")
+def delete_notifications():
+    return controllers.handle_delete_notifications(request)
+
 @app.post("/api/upload")
 def upload():
     return controllers.handle_upload(request)
