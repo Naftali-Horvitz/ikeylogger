@@ -7,6 +7,9 @@ from encryptor import Encryptor
 from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
+
 def deep_merge(source, destination):
     # מבצע מיזוג עמוק של מילונים מקוננים.
 
@@ -21,9 +24,7 @@ def deep_merge(source, destination):
             # אחרת, פשוט עדכן את הערך
             destination[key] = value
     return destination
-CORS(app)
 
-LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
 @app.route('/')
 def home():
     """הוסף נקודת קצה מהשרת המרוחק"""
