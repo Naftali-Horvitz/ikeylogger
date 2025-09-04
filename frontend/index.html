@@ -1,175 +1,132 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
+  <title>KeyLogger Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>מרכז ניהול מחשבים</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="theme-modern">
-  <header class="appbar" role="banner">
-    <div class="appbar-inner container">
-      <div class="brand" aria-label="כותרת היישום">
-        <div class="logo" aria-hidden="true"></div>
-        <h1>מרכז ניהול מחשבים</h1>
-      </div>
-      <nav class="topnav" aria-label="ניווט ראשי">
-        <button class="tablink" data-route="#/home">עמוד הבית</button>
-        <button class="tablink" data-route="#/logs">לוגים</button>
-        <button class="tablink" data-route="#/alerts">התראות</button>
-        <button class="tablink" data-route="#/agent">ניהול הסוכן</button>
-      </nav>
-      <div class="toolbar">
-        <label for="themeSelect" class="muted" style="font-weight:600">עיצוב:</label>
-        <select id="themeSelect" class="select" aria-label="בחירת עיצוב">
-          <option value="theme-modern" selected>מודרני</option>
-          <option value="theme-neon">כהה · ניאון</option>
-        </select>
-      </div>
-    </div>
-  </header>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">KeyLogger</div>
+    <ul class="nav-links">
+      <li><a href="#" data-page="home" class="active">בית</a></li>
+      <li><a href="#" data-page="logs">לוגים</a></li>
+      <li><a href="#" data-page="agent">ניהול סוכן</a></li>
+    </ul>
+  </nav>
 
   <main class="container">
-    <!-- עמוד הבית -->
-    <section id="page-home" class="page" data-route="home">
-      <div class="grid cols-3">
-        <div class="card">
-          <h3>מחשבים במערכת</h3>
-          <p class="muted" id="computerCount">—</p>
-          <div class="toolbar" style="margin-block:8px">
-            <input id="searchComputers" class="input" placeholder="חיפוש מחשב לפי שם…" />
-            <button class="button ghost" id="btnRefreshHome">רענון</button>
-          </div>
-          <div id="computerList" class="grid cols-2" aria-live="polite"></div>
-        </div>
-        <div class="card">
-          <h3>סטטיסטיקות זריזות</h3>
-          <ul class="muted" id="quickStats" style="line-height:1.9"></ul>
-        </div>
-        <div class="card">
-          <h3>התראה אחרונה</h3>
-          <div id="latestAlert">—</div>
-        </div>
-      </div>
-    </section>
+    <!-- HOME PAGE -->
+    <section id="page-home" class="page section">
+      <header class="header">
+        <h1>ברוך הבא</h1>
+        <p class="muted">בחר מחשב מהרשימה למעלה, או צור/נהל התראות.</p>
+      </header>
 
-    <!-- לוגים -->
-    <section id="page-logs" class="page" data-route="logs">
-      <div class="card">
-        <div class="toolbar" style="justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-          <div class="toolbar" style="gap:8px">
-            <input id="searchLogs" class="input" placeholder="סינון לפי טקסט או מחשב…" />
-            <select id="levelFilter" class="select">
-              <option value="">כל הרמות</option>
-              <option value="INFO">INFO</option>
-              <option value="WARN">WARN</option>
-              <option value="ERROR">ERROR</option>
-            </select>
-          </div>
-          <div class="toolbar" style="gap:8px">
-            <button class="button" id="btnExportCsv">ייצוא CSV</button>
-            <button class="button ghost" id="btnAddLog">הוסף לוג דוגמה</button>
-          </div>
+      <!-- רשימת מחשבים -->
+      <div class="section">
+        <div class="section-title">
+          <h2>מחשבים זמינים</h2>
+          <button class="btn" id="btn-refresh-machines">רענן</button>
         </div>
-        <div style="overflow:auto; max-height: 55vh; margin-top: 8px; border:1px solid var(--border); border-radius: 12px;">
-          <table aria-label="טבלת לוגים">
-            <thead>
-              <tr>
-                <th>זמן</th>
-                <th>מחשב</th>
-                <th>רמה</th>
-                <th>הודעה</th>
-              </tr>
-            </thead>
-            <tbody id="logsTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- התראות -->
-    <section id="page-alerts" class="page" data-route="alerts">
-      <div class="card">
-        <div class="toolbar" style="justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-          <div class="toolbar">
-            <select id="severityFilter" class="select">
-              <option value="">כל החומרות</option>
-              <option value="low">נמוכה</option>
-              <option value="medium">בינונית</option>
-              <option value="high">גבוהה</option>
-            </select>
-            <button class="button ghost" id="btnAddAlert">צור התראת דוגמה</button>
-          </div>
-          <div class="toolbar">
-            <button class="button" id="btnResolveAll">סמן כולן כטופלו</button>
-          </div>
-        </div>
-        <div id="alertsList" class="grid cols-2" style="margin-top:12px"></div>
-      </div>
-    </section>
-
-    <!-- ניהול הסוכן -->
-    <section id="page-agent" class="page" data-route="agent">
-      <div class="grid cols-2">
-        <div class="card">
-          <h3>מצב הסוכן</h3>
-          <div class="toolbar" style="justify-content: space-between;">
-            <div class="badge info">גרסה: <span id="agentVersion">1.3.2</span></div>
-            <div class="toolbar" style="gap: 12px; align-items: center;">
-              <span class="muted" id="agentStateLabel">מופעל</span>
-              <div id="agentSwitch" class="switch on" role="switch" aria-checked="true" tabindex="0" aria-label="הפעל/כיבוי סוכן"><div class="knob"></div></div>
-            </div>
-          </div>
-          <div class="toolbar" style="margin-top: 12px; gap: 8px; flex-wrap: wrap;">
-            <button class="button warn" id="btnCheckUpdates">בדיקת עדכון</button>
-            <button class="button primary" id="btnInstallUpdate" disabled>התקן עדכון</button>
-            <button class="button ghost" id="btnPing">בדיקת תקשורת</button>
-          </div>
-        </div>
-        <div class="card">
-          <h3>הגדרות</h3>
-          <form id="agentForm" class="grid" style="gap:10px">
-            <label>
-              <div class="muted" style="font-weight:600">שרת רישום</div>
-              <input class="input" name="endpoint" placeholder="https://logs.example.local" required />
-            </label>
-            <label>
-              <div class="muted" style="font-weight:600">רמת לוג</div>
-              <select class="select" name="level">
-                <option>INFO</option>
-                <option>WARN</option>
-                <option>ERROR</option>
-                <option>DEBUG</option>
-              </select>
-            </label>
-            <label>
-              <div class="muted" style="font-weight:600">מרווח ניטור (שניות)</div>
-              <input class="input" name="interval" type="number" min="1" value="30" required />
-            </label>
-            <div class="toolbar" style="margin-top: 4px; gap:8px">
-              <button type="submit" class="button primary">שמור</button>
-              <button type="reset" class="button ghost">איפוס</button>
-            </div>
-          </form>
-        </div>
+        <div id="machines-strip" class="machines-strip"></div>
+        <div id="machines-status" class="status muted"></div>
       </div>
 
-      <div class="card" style="margin-top: 16px;">
-        <h3>ניהול מחשבים</h3>
-        <form id="addComputerForm" class="toolbar" style="gap:8px; flex-wrap: wrap;">
-          <input class="input" id="newComputerName" placeholder="הוסף מחשב חדש בשם…" />
-          <button class="button" id="btnAddComputer">הוסף</button>
+      <!-- התראות -->
+      <div class="section">
+        <div class="section-title">
+          <h2>התראות</h2>
+        </div>
+
+        <!-- יצירת התראה -->
+        <form id="alert-form" class="alert-form">
+          <div>
+            <label>כותרת התראה</label>
+            <input type="text" id="alert-title" placeholder="לדוגמה: הקלדת מילת מפתח" required />
+          </div>
+          <div>
+            <label>מילות מפתח (מופרדות בפסיק)</label>
+            <input type="text" id="alert-keywords" placeholder="סיסמה, אשראי, קוד" />
+          </div>
+          <button class="btn" type="submit">צור התראה</button>
         </form>
+
+        <!-- רשימת התראות -->
+        <div id="alerts-list" class="alerts-list"></div>
+      </div>
+    </section>
+
+    <!-- LOGS PAGE -->
+    <section id="page-logs" class="page section hidden">
+      <header class="header">
+        <h1>לוגים לפי מחשב</h1>
+        <p class="muted">בחר מחשב, תאריך וטווח שעות.</p>
+      </header>
+
+      <div class="search-form" id="logs-search-form">
+        <div>
+          <label>מחשב</label>
+          <select id="logs-machine"></select>
+        </div>
+        <div>
+          <label>תאריך</label>
+          <input type="date" id="logs-date" />
+          <div class="muted" id="weekday-label"></div>
+        </div>
+        <div>
+          <label>משעה</label>
+          <input type="time" id="logs-start" step="1" />
+        </div>
+        <div>
+          <label>עד שעה</label>
+          <input type="time" id="logs-end" step="1" />
+        </div>
+        <div class="actions">
+          <button class="btn" id="btn-fetch-logs">חפש</button>
+        </div>
+      </div>
+
+      <div id="logs-status" class="status muted"></div>
+      <div id="logs-results" class="logs-results"></div>
+    </section>
+
+    <!-- AGENT PAGE -->
+    <section id="page-agent" class="page section hidden">
+      <header class="header">
+        <h1>ניהול הסוכן</h1>
+        <p class="muted">ההגדרות נשמרות מקומית כרגע. ניתן לחבר לנקודות קצה בשרת כשיהיו זמינות.</p>
+      </header>
+
+      <div class="agent-grid">
+        <div class="option-item">
+          <label for="agent-api-base">כתובת API</label>
+          <input id="agent-api-base" type="text" placeholder="http://127.0.0.1:5000/api" />
+          <button class="btn" id="btn-save-api">שמור</button>
+        </div>
+
+        <div class="option-item">
+          <label for="agent-enc-code">קוד הצפנה</label>
+          <input id="agent-enc-code" type="password" placeholder="******" />
+          <button class="btn" id="btn-save-enc">שמור</button>
+        </div>
+
+        <div class="option-item">
+          <label for="agent-wait-sec">זמן המתנה (שניות)</label>
+          <input id="agent-wait-sec" type="number" min="0" step="1" placeholder="5" />
+          <button class="btn" id="btn-save-wait">שמור</button>
+        </div>
+
+        <div class="option-item">
+          <label>מצב סוכן</label>
+          <button class="btn btn-toggle" id="btn-toggle-agent">התחלת האזנה</button>
+        </div>
       </div>
     </section>
   </main>
 
-  <div class="footer">
-    © <span id="year"></span> · דוגמת UI: 4 דפים, 3 עיצובים (מינימליסטי/מודרני/כהה)
-  </div>
-
-  <div class="toast" aria-live="polite" aria-atomic="true" id="toast"></div>
-
-  <script src="script.js"></script>
+  <script defer src="script.js"></script>
 </body>
 </html>
