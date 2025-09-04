@@ -15,6 +15,8 @@
       <li><a href="#" data-page="logs">לוגים</a></li>
       <li><a href="#" data-page="agent">ניהול סוכן</a></li>
     </ul>
+    <!-- חיווי סטטוס הסוכן -->
+    <div id="agent-indicator" class="pill off">כבוי</div>
   </nav>
 
   <main class="container">
@@ -22,12 +24,12 @@
     <section id="page-home" class="page section">
       <header class="header">
         <h1>ברוך הבא</h1>
-        <p class="muted">בחר מחשב מהרשימה למעלה, או צור/נהל התראות.</p>
+        <p class="muted">בחר מחשב מהרשימה למטה, או צור/נהל התראות.</p>
       </header>
 
       <!-- רשימת מחשבים -->
       <div class="section">
-        <div class="section-title">
+        <div class="section-title space-between">
           <h2>מחשבים זמינים</h2>
           <button class="btn" id="btn-refresh-machines">רענן</button>
         </div>
@@ -37,11 +39,7 @@
 
       <!-- התראות -->
       <div class="section">
-        <div class="section-title">
-          <h2>התראות</h2>
-        </div>
-
-        <!-- יצירת התראה -->
+        <div class="section-title"><h2>התראות</h2></div>
         <form id="alert-form" class="alert-form">
           <div>
             <label>כותרת התראה</label>
@@ -53,8 +51,6 @@
           </div>
           <button class="btn" type="submit">צור התראה</button>
         </form>
-
-        <!-- רשימת התראות -->
         <div id="alerts-list" class="alerts-list"></div>
       </div>
     </section>
@@ -63,7 +59,7 @@
     <section id="page-logs" class="page section hidden">
       <header class="header">
         <h1>לוגים לפי מחשב</h1>
-        <p class="muted">בחר מחשב, תאריך וטווח שעות.</p>
+        <p class="muted">בחר מחשב, תאריך וטווח שעות (HH:MM, ללא שניות).</p>
       </header>
 
       <div class="search-form" id="logs-search-form">
@@ -78,11 +74,11 @@
         </div>
         <div>
           <label>משעה</label>
-          <input type="time" id="logs-start" step="1" />
+          <input type="time" id="logs-start" step="60" />
         </div>
         <div>
           <label>עד שעה</label>
-          <input type="time" id="logs-end" step="1" />
+          <input type="time" id="logs-end" step="60" />
         </div>
         <div class="actions">
           <button class="btn" id="btn-fetch-logs">חפש</button>
@@ -97,35 +93,38 @@
     <section id="page-agent" class="page section hidden">
       <header class="header">
         <h1>ניהול הסוכן</h1>
-        <p class="muted">ההגדרות נשמרות מקומית כרגע. ניתן לחבר לנקודות קצה בשרת כשיהיו זמינות.</p>
+        <p class="muted">שומר לשרת את ארבעת ההגדרות: <code>url</code>, <code>key_encryptor</code>, <code>wait_time</code>, <code>status_listen</code>.</p>
       </header>
 
       <div class="agent-grid">
         <div class="option-item">
-          <label for="agent-api-base">כתובת API</label>
-          <input id="agent-api-base" type="text" placeholder="http://127.0.0.1:5000/api" />
-          <button class="btn" id="btn-save-api">שמור</button>
+          <label for="agent-url">url</label>
+          <input id="agent-url" type="text" placeholder="http://127.0.0.1:5000/api/upload" />
+          <button class="btn" id="btn-save-url">שמור</button>
         </div>
 
         <div class="option-item">
-          <label for="agent-enc-code">קוד הצפנה</label>
-          <input id="agent-enc-code" type="password" placeholder="******" />
-          <button class="btn" id="btn-save-enc">שמור</button>
+          <label for="agent-key">key_encryptor</label>
+          <input id="agent-key" type="password" placeholder="******" />
+          <button class="btn" id="btn-save-key">שמור</button>
         </div>
 
         <div class="option-item">
-          <label for="agent-wait-sec">זמן המתנה (שניות)</label>
+          <label for="agent-wait-sec">wait_time (שניות)</label>
           <input id="agent-wait-sec" type="number" min="0" step="1" placeholder="5" />
           <button class="btn" id="btn-save-wait">שמור</button>
         </div>
 
         <div class="option-item">
-          <label>מצב סוכן</label>
-          <button class="btn btn-toggle" id="btn-toggle-agent">התחלת האזנה</button>
+          <label>status_listen</label>
+          <button class="btn btn-toggle" id="btn-toggle-agent" data-on="0">התחל האזנה</button>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Toasts -->
+  <div id="toast" class="toast hidden"></div>
 
   <script defer src="script.js"></script>
 </body>

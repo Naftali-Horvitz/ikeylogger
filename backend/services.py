@@ -13,7 +13,7 @@ agent_settings = {
 
 def update_settings(data):
     for key, value in data.items():
-        if value and key in agent_settings:
+        if key in agent_settings:
             agent_settings[key] = value
     return jsonify({"status": "ok", "updated_settings": agent_settings})
 

