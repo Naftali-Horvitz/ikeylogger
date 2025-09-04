@@ -29,5 +29,13 @@ def get_machines():
 def get_keystrokes():
     return controllers.handle_get_keystrokes(request)
 
+@app.post("/api/update_settings")
+def update_settings():
+    return controllers.handle_update_settings(request)
+
+@app.get("/api/get_settings")
+def get_settings():
+    return controllers.handle_get_settings()
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

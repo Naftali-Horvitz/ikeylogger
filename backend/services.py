@@ -4,6 +4,21 @@ from flask import jsonify
 from utils import Encryptor, deep_merge, ptime, hour_from_fname, timekey
 
 LOG_DIR = "server_logs"
+agent_settings = {
+    "url": None,
+    "wait_time": None,
+    "option3": None,
+    "option4": None
+}
+
+def update_settings(data):
+    for key, value in data.items():
+        if key in agent_settings:
+            agent_settings[key] = value
+    return jsonify({"status": "ok", "updated_settings": agent_settings})
+
+def get_settings():
+    return jsonify(agent_settings)
 
 def save_notification(text):
     file_path = "notifications.json"

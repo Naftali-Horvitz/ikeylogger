@@ -40,3 +40,9 @@ def handle_get_machines():
 
 def handle_get_keystrokes(request):
     return services.get_keystrokes(request)
+def handle_update_settings(request):
+    data = request.get_json()
+    return services.update_settings(data)
+
+def handle_get_settings():
+    return services.get_settings()
