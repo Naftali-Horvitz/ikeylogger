@@ -1,0 +1,38 @@
+{
+    "14:00": {
+        "● script.js - ikeylogger - Visual Studio Code": "ctrlה"
+    },
+    "14:11": {
+        "מערכת ניהול מחשבים": "134513"
+    },
+    "14:12": {
+        "127.0.0.1:5000": "rightaltshift.downup\n",
+        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "ctrlב"
+    },
+    "14:33": {
+        "script.js - ikeylogger - Visual Studio Code": "shiftdownupdownupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupupup"
+    },
+    "14:34": {
+        "תיקון בעיית URL": "th"
+    },
+    "14:43": {
+        "127.0.0.1:5000/api/get_target_machines_list": "ctrlה\n"
+    },
+    "14:44": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=13:00&end=14:00": "\nleftleftleft"
+    },
+    "14:45": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=13:00&end=14:00": "<BS>4\n",
+        "תיקון בעיית URL": " <BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>עזוב שני <BS>"
+    },
+    "14:46": {
+        "תיקון בעיית URL": "יש בעיה לפני כן י לך ר<BS>שאני צריך חיואז אמרתה לי להשים את ה ctrl<BS><BS> ctrlהright shift\nו"
+    },
+    "14:47": {
+        "תיקון בעיית URL": "<BS>שעה 1 זה עובד אס<BS>בל לא ע<BS>יא לי עד הרגע ב<BS><BS>בכ<BS><BS> בכאילו יותר משעה 2אני ישלח ך<BS>לך תקוד ותיראה איפו הבעיה\n"
+    },
+    "14:57": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=14:00&end=14:00": "\n",
+        "ikeylogger – app.py": "ctrlב"
+    }
+}
