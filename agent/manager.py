@@ -24,7 +24,7 @@ class Manager:
         time.sleep(self.time_network)
 
     def stop_and_continue(self):
-        self.service.stop_continue(self.status_listen)
+        self.service.stop_and_continue(self.status_listen)
 
     def handle_response(self, response_data: dict):
         """
@@ -53,13 +53,11 @@ class Manager:
         self.file_writer.delete_file(machine_name)
 
     def file_content(self):
-        while True:
             data = self.file_writer.read_data(self.machine_name)
             res = self.network_writer.send_data(data,self.machine_name)
             if res is None or res.status_code != 200:
-                print("שליחה נכשלה. שומר את הנתונים לקובץ.")
-                continue
-            print("הנתונים נשלחו בהצלחה.")
+                print("שליחה מהקובץ נכשלה הנתונים יחזרו לקובץ.")
+            print("הנתונים מהקובץ נשלחו בהצלחה.")
             self.delete_file(self.machine_name)
 
     def manage(self):
@@ -71,7 +69,7 @@ class Manager:
                 print(data)
                 encrypted_data = self.encryptor.encrypt_dict(data)                      # שלב 2: מצפין את הנתונים לפני השליחה
                 res = self.network_writer.send_data(encrypted_data, self.machine_name)  # שלב 3: מנסה לשלוח את הנתונים
-                                                                                        # בדיקת התגובה מהשרת
+
                 if res is None or res.status_code != 200:
                     print("שליחה נכשלה. שומר את הנתונים לקובץ.")
                     self.file_write(encrypted_data)
@@ -79,6 +77,7 @@ class Manager:
                 print("הנתונים נשלחו בהצלחה.")                                           # אם הגעת לכאן, הכל תקין (קוד0 200)
                 res_data = res.json()
                 self.handle_response(res_data)
+                self.file_content()
             except Exception as e:
                 print(e)
 

