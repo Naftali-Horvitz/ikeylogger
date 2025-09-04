@@ -11,9 +11,26 @@ def save_notification(text):
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             alerts = json.load(f)
-    alerts.append(text)
+    if not text in alerts:
+        alerts.append(text)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
+
+
+def delete_notification(text):
+    alerts = []
+    file_path = "notifications.json"
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            alerts = json.load(f)
+    for find_text in alerts:
+        if find_text == text:
+            alerts.remove(find_text)
+            break
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(alerts, f, ensure_ascii=False, indent=2)
+
+
 
 def save_keystrokes(data):
     enc = Encryptor()
