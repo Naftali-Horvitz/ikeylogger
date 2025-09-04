@@ -1,0 +1,15 @@
+{
+    "16:20": {
+        "Naftali-Horvitz/ikeylogger": "left windowsleft shiftS",
+        "תיקון בעיית URL": "ctrlהד<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>altshift"
+    },
+    "16:21": {
+        "תיקון בעיית URL": "העלה לי את altshiftהדמחור<BS><BS>ק<BS>וק את זהright shift?????\n"
+    },
+    "16:26": {
+        "127.0.0.1:5000": "right"
+    },
+    "16:27": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=14:00&end=14:00": "right<BS>3\n"
+    }
+}

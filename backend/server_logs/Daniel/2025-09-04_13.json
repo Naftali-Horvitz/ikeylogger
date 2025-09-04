@@ -1,0 +1,20 @@
+{
+    "13:33": {
+        "סידור קוד Flask": "עעעעעעע"
+    },
+    "13:34": {
+        "סידור קוד Flask": "חחחחח"
+    },
+    "13:35": {
+        "127.0.0.1:5000": "rightaltshift.",
+        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "\nright<BS><BS><BS><BS>shift<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>.downdownup\n",
+        "127.0.0.1:5000/api/get_target_machines_list": "right<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>"
+    },
+    "13:40": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "\n"
+    },
+    "13:41": {
+        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "right<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>right<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>",
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=13:00&end=14:00": "<BS>4\n"
+    }
+}

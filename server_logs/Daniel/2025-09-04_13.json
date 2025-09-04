@@ -1,0 +1,9 @@
+{
+    "13:39": {
+        "WhatsApp": "j",
+        "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=13:00&end=14:00": "\n\nright<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>downdown\n"
+    },
+    "13:40": {
+        "127.0.0.1:5000/api/get_target_machines_list": "right<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>"
+    }
+}
