@@ -50,6 +50,23 @@ async function apiPOST(path, body){
   return res.json();
 }
 
+// ===== Login =====
+async function login(username, password){
+  try {
+    const res = await apiPOST(`/login`, { username, password });
+    if(res.success){
+      window.location.href = "home.html"; // מעבר לדף הבית
+    } else {
+      toast(res.message, false);
+    }
+  } catch(e) {
+    console.error(e);
+    toast("שגיאה בשרת. נסה שוב.", false);
+  }
+}
+
+
+
 const api = {
   // מחשבים/לוגים
   getMachines:   () => apiGET(`/get_target_machines_list`),
@@ -223,6 +240,19 @@ async function fetchLogs(){
 
 // ===== אירועים ואתחול =====
 document.addEventListener("DOMContentLoaded", ()=>{
+
+//לוגין
+const loginForm = document.getElementById("loginForm");
+    if(loginForm){
+      loginForm.addEventListener("submit", (e)=>{
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        if(!username || !password) return toast("יש למלא שם משתמש וסיסמה", false);
+        login(username, password);
+      });
+    }
+
   // ניווט
   $$(".nav-links a").forEach(a => {
     a.addEventListener("click", (e)=>{ e.preventDefault(); showPage(a.dataset.page); });

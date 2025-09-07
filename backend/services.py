@@ -11,6 +11,21 @@ agent_settings = {
     "key_encryptor": "nmrd",
 }
 
+# services.py
+
+# רשימת משתמשים מורשים
+VALID_USERS = {
+    "מאיר": "12345",
+    "user2": "mypassword",
+    "admin": "adminpass"
+}
+
+def is_valid_user(username: str, password: str) -> bool:
+    """בודק אם שם המשתמש והסיסמה נכונים"""
+    return username in VALID_USERS and VALID_USERS[username] == password
+
+
+
 def update_settings(data):
     for key, value in data.items():
         if key in agent_settings:
