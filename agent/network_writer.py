@@ -7,9 +7,17 @@ class NetworkWriter(IWriter):
         self.server_url =  server_url
         self.timeout_sec = timeout_sec
 
+    @property
+    def url(self):
+        return self.server_url
+    @url.setter
+    def url(self, value):
+        self.server_url = value
+
     def send_data(self, data: Any, machine_name: str) -> requests.Response | None:
         payload = data
         try:
+            print(self.server_url)
             response = requests.post(self.server_url, json=payload, timeout=self.timeout_sec)
             response.raise_for_status()
             return response

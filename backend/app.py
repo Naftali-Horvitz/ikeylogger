@@ -13,7 +13,11 @@ def home():
 def notifications():
     return controllers.handle_notifications(request)
 
-@app.post("/api/deletenotifications")
+@app.get("/api/get_notifications")
+def get_notifications():
+    return controllers.handle_get_notifications()
+
+@app.post("/api/delete_notification")
 def delete_notifications():
     return controllers.handle_delete_notifications(request)
 

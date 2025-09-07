@@ -15,6 +15,7 @@ def update_settings(data):
     for key, value in data.items():
         if key in agent_settings:
             agent_settings[key] = value
+    print(agent_settings)
     return jsonify({"status": "ok", "updated_settings": agent_settings})
 
 def get_settings():
@@ -31,16 +32,37 @@ def save_notification(text):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
 
-def delete_notification(text):
-    alerts = []
+
+def get_notifications(file_path="notifications.json"):
+    if not os.path.exists(file_path):
+        return None
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            # נוודא שהמבנה הוא רשימה
+            if isinstance(data, list):
+                return data
+            return None
+    except (json.JSONDecodeError, OSError):
+        return None
+
+def delete_notification(notification_id):
+    print(notification_id)
+    print(type(notification_id))
     file_path = "notifications.json"
+    alerts = []
+
+    # קרא את הקובץ אם קיים
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             alerts = json.load(f)
-    for find_text in alerts:
-        if find_text == text:
-            alerts.remove(find_text)
-            break
+    for alert in alerts:
+        print(type(alert))
+        if notification_id in alert:
+                alerts.remove(alert)
+                break
+
+    # שמור בחזרה את הרשימה המעודכנת
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
 
@@ -107,4 +129,5 @@ def get_keystrokes(request):
                     if (t:=timekey(k)) is None or (start_t <= t <= end_t)}
         if filtered:
             out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
-    return jsonify(out)
+            print(out)
+    return out

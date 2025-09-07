@@ -1,33 +1,35 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
   <meta charset="UTF-8" />
   <title>KeyLogger Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="nav-brand">KeyLogger</div>
-    <ul class="nav-links">
-      <li><a href="#" data-page="home" class="active">בית</a></li>
-      <li><a href="#" data-page="logs">לוגים</a></li>
-      <li><a href="#" data-page="agent">ניהול סוכן</a></li>
-    </ul>
-    <!-- חיווי סטטוס הסוכן -->
-    <div id="agent-indicator" class="pill off">כבוי</div>
-  </nav>
+<header class="appbar" role="banner">
+  <div class="appbar-inner container">
+    <div class="brand" aria-label="כותרת היישום">
+      <div class="logo" aria-hidden="true"></div>
+      <h1>מרכז ניהול מחשבים</h1>
+    </div>
+
+    <nav class="topnav nav-links" aria-label="ניווט ראשי">
+      <button class="tablink" data-page="home" aria-current="page">בית</button>
+      <button class="tablink" data-page="logs">לוגים</button>
+      <button class="tablink" data-page="alerts">ניהול התראות</button>
+      <button class="tablink" data-page="agent">ניהול סוכן</button>
+    </nav>
+
+    <div id="agent-indicator" class="pill off"></div>
+  </div>
+</header>
 
   <main class="container">
     <!-- HOME PAGE -->
     <section id="page-home" class="page section">
-      <header class="header">
-        <h1>ברוך הבא</h1>
-        <p class="muted">בחר מחשב מהרשימה למטה, או צור/נהל התראות.</p>
-      </header>
-
-      <!-- רשימת מחשבים -->
       <div class="section">
         <div class="section-title space-between">
           <h2>מחשבים זמינים</h2>
@@ -36,30 +38,37 @@
         <div id="machines-strip" class="machines-strip"></div>
         <div id="machines-status" class="status muted"></div>
       </div>
+    </section>
 
-      <!-- התראות -->
-      <div class="section">
-        <div class="section-title"><h2>התראות</h2></div>
-        <form id="alert-form" class="alert-form">
-          <div>
-            <label>כותרת התראה</label>
-            <input type="text" id="alert-title" placeholder="לדוגמה: הקלדת מילת מפתח" required />
-          </div>
-          <div>
-            <label>מילות מפתח (מופרדות בפסיק)</label>
-            <input type="text" id="alert-keywords" placeholder="סיסמה, אשראי, קוד" />
-          </div>
-          <button class="btn" type="submit">צור התראה</button>
-        </form>
-        <div id="alerts-list" class="alerts-list"></div>
-      </div>
+    <!-- ALERTS PAGE -->
+    <section id="page-alerts" class="page section hidden">
+      <header class="header">
+        <h1>ניהול התראות</h1>
+        <p class="muted">צפה, צור ומחק התראות קיימות.</p>
+      </header>
+
+      <!-- טופס ליצירת התראה -->
+      <form id="alert-form" class="alert-form">
+        <div>
+          <label>כותרת התראה</label>
+          <input type="text" id="alert-title" placeholder="לדוגמה: הקלדת מילת מפתח" required />
+        </div>
+        <div>
+          <label>מילות מפתח (מופרדות בפסיק)</label>
+          <input type="text" id="alert-keywords" placeholder="סיסמה, אשראי, קוד" />
+        </div>
+        <button class="btn" type="submit">צור התראה</button>
+      </form>
+
+      <!-- רשימת התראות מהשרת -->
+      <div id="alerts-list" class="alerts-list"></div>
     </section>
 
     <!-- LOGS PAGE -->
     <section id="page-logs" class="page section hidden">
       <header class="header">
         <h1>לוגים לפי מחשב</h1>
-        <p class="muted">בחר מחשב, תאריך וטווח שעות (HH:MM, ללא שניות).</p>
+        <p class="muted">בחר מחשב, תאריך וטווח שעות.</p>
       </header>
 
       <div class="search-form" id="logs-search-form">
@@ -70,7 +79,6 @@
         <div>
           <label>תאריך</label>
           <input type="date" id="logs-date" />
-          <div class="muted" id="weekday-label"></div>
         </div>
         <div>
           <label>משעה</label>
@@ -85,15 +93,15 @@
         </div>
       </div>
 
-      <div id="logs-status" class="status muted"></div>
       <div id="logs-results" class="logs-results"></div>
+      <div id="logs-status" class="status muted"></div>
     </section>
 
     <!-- AGENT PAGE -->
     <section id="page-agent" class="page section hidden">
       <header class="header">
         <h1>ניהול הסוכן</h1>
-        <p class="muted">שומר לשרת את ארבעת ההגדרות: <code>url</code>, <code>key_encryptor</code>, <code>wait_time</code>, <code>status_listen</code>.</p>
+        <p class="muted">הגדרות: <code>url</code>, <code>key_encryptor</code>, <code>wait_time</code>, <code>status_listen</code>.</p>
       </header>
 
       <div class="agent-grid">
@@ -123,9 +131,8 @@
     </section>
   </main>
 
-  <!-- Toasts -->
   <div id="toast" class="toast hidden"></div>
 
-  <script defer src="script.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

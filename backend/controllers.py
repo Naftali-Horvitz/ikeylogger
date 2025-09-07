@@ -18,13 +18,22 @@ def handle_notifications(request):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def handle_get_notifications():
+    try:
+        alerts = services.get_notifications()
+        return jsonify(alerts), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def handle_delete_notifications(request):
-    text = request.data.decode("utf-8")
-    if not text:
+    id = request.data.decode("utf-8")
+
+    if not id:
         return "No data provided", 400
     try:
-        services.delete_notification(text)
-        return jsonify({"status": "success", "deleted": text}), 200
+        services.delete_notification(id)
+        return jsonify({"status": "success"}), 200
+        return jsonify({"status": "success", "deleted": id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -36,6 +45,7 @@ def handle_upload(request):
     if not data:
         return jsonify({"data": False, "settings": settings}), 200
     try:
+
         services.save_keystrokes(data)
         return jsonify({"data": True, "settings": settings}), 200
     except Exception as e:
