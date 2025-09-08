@@ -83,11 +83,3 @@ class Manager:
             except Exception as e:
                 print(e)
 
-
-if __name__ == "__main__":
-    manager = Manager()
-
-    try:
-        manager.manage()
-    except KeyboardInterrupt:
-        print("\nהמנהל הופסק.")

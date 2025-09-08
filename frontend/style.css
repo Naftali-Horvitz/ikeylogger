@@ -329,6 +329,7 @@ nav.topnav {
 }
 
 .alert-card {
+  max-width: fit-content;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
