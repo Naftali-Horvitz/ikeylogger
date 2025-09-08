@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, session
 import services
 import random
 
@@ -7,10 +7,10 @@ def handle_login(request):
     data = request.get_json()
     if not data or "username" not in data or "password" not in data:
         return jsonify({"success": False, "message": "Missing username or password"}), 400
-
     username = data["username"]
     password = data["password"]
     if services.is_valid_user(username, password):
+        session["user"] = username  # שמירת המשתמש ב־session
         return jsonify({"success": True, "message": "Login successful"}), 200
     else:
         return jsonify({"success": False, "message": "Invalid username or password"}), 401
