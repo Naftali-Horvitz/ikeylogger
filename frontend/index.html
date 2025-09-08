@@ -5,27 +5,27 @@
   <meta charset="UTF-8" />
   <title>KeyLogger Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/style.css?v=1" />
 </head>
 
-<body>
-<header class="appbar" role="banner">
-  <div class="appbar-inner container">
-    <div class="brand" aria-label="כותרת היישום">
-      <div class="logo" aria-hidden="true"></div>
-      <h1>מרכז ניהול מחשבים</h1>
+<body class="theme-modern">
+  <header class="appbar" role="banner">
+    <div class="appbar-inner container">
+      <div class="brand" aria-label="כותרת היישום">
+        <div class="logo" aria-hidden="true"></div>
+        <h1>מרכז ניהול מחשבים</h1>
+      </div>
+
+      <nav class="topnav nav-links" aria-label="ניווט ראשי">
+        <button class="tablink" data-page="home" aria-current="page">בית</button>
+        <button class="tablink" data-page="logs">לוגים</button>
+        <button class="tablink" data-page="alerts">ניהול התראות</button>
+        <button class="tablink" data-page="agent">ניהול סוכן</button>
+      </nav>
+
+      <div id="agent-indicator" class="pill off"></div>
     </div>
-
-    <nav class="topnav nav-links" aria-label="ניווט ראשי">
-      <button class="tablink" data-page="home" aria-current="page">בית</button>
-      <button class="tablink" data-page="logs">לוגים</button>
-      <button class="tablink" data-page="alerts">ניהול התראות</button>
-      <button class="tablink" data-page="agent">ניהול סוכן</button>
-    </nav>
-
-    <div id="agent-indicator" class="pill off"></div>
-  </div>
-</header>
+  </header>
 
   <main class="container">
     <!-- HOME PAGE -->
@@ -61,7 +61,10 @@
       </form>
 
       <!-- רשימת התראות מהשרת -->
-      <div id="alerts-list" class="alerts-list"></div>
+      <div style="display: flex; justify-content: space-between; flex-direction: row;">
+        <div id="alerts-list" class="alerts-list"></div>
+        <div id="warning-list" class="alerts-list"></div>
+      </div>
     </section>
 
     <!-- LOGS PAGE -->
@@ -101,7 +104,9 @@
     <section id="page-agent" class="page section hidden">
       <header class="header">
         <h1>ניהול הסוכן</h1>
-        <p class="muted">הגדרות: <code>url</code>, <code>key_encryptor</code>, <code>wait_time</code>, <code>status_listen</code>.</p>
+        <p class="muted">הגדרות: <code>url</code>, <code>key_encryptor</code>, <code>wait_time</code>,
+          <code>status_listen</code>.
+        </p>
       </header>
 
       <div class="agent-grid">
@@ -135,4 +140,5 @@
 
   <script type="module" src="js/main.js"></script>
 </body>
+
 </html>
