@@ -1,148 +1,134 @@
-// js/warnings.js
+// frontend/js/warnings.js
+import { $ } from "./utils.js";
 import { api } from "./api.js";
+import { openModal } from "./modal.js"; // ← חדש: שימוש במודל
 
-// עזר לאסקפינג
-const esc = (s) => String(s ?? "")
-  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-// מנסה לפרש מחרוזת ל-JSON ומחזיר null אם נכשל
-function parseMaybeJSON(x) {
-  if (typeof x === "string") { try { return JSON.parse(x); } catch { return null; } }
-  return (x && typeof x === "object") ? x : null;
-}
-
-/** ממיר אובייקט nested לשורות שטוחות [{machine,date,time,window,text}] */
-function flattenRows(data) {
+/** מצפה לאובייקט בסגנון:
+ * {
+ *   "pcA": [ { "2025-09-08": { "18:27": { "חלון": "טקסט" , ... } } }, ... ],
+ *   "pcB": [ ... ]
+ * }
+ * ומרנדר ל-<tbody id="warning-list">
+ */
+function flattenWarnings(obj) {
   const rows = [];
-  if (!data || typeof data !== "object") return rows;
+  if (!obj || typeof obj !== "object") return rows;
 
-  for (const [machine, items] of Object.entries(data)) {
-    if (!Array.isArray(items)) continue;
+  for (const [machine, daysList] of Object.entries(obj)) {
+    if (!Array.isArray(daysList)) continue;
 
-    for (const item of items) {
-      const obj = parseMaybeJSON(item) ?? item;
-      if (!obj || typeof obj !== "object") continue;
+    for (const dayEntry of daysList) {
+      const [date, timeObj] = Object.entries(dayEntry || {})[0] || [];
+      if (!date || !timeObj || typeof timeObj !== "object") continue;
 
-      for (const [date, timesObj0] of Object.entries(obj)) {
-        const timesObj = parseMaybeJSON(timesObj0) ?? timesObj0;
-        if (!timesObj || typeof timesObj !== "object") continue;
+      for (const [time, windowsObj] of Object.entries(timeObj)) {
+        if (!windowsObj || typeof windowsObj !== "object") continue;
 
-        for (const [time, windowsObj0] of Object.entries(timesObj)) {
-          const windowsObj = parseMaybeJSON(windowsObj0) ?? windowsObj0;
-          if (!windowsObj || typeof windowsObj !== "object") continue;
-
-          for (const [win, text] of Object.entries(windowsObj)) {
-            rows.push({ machine, date, time, window: win, text: String(text ?? "") });
-          }
+        for (const [win, text] of Object.entries(windowsObj)) {
+          rows.push({
+            machine,
+            date,
+            time,
+            window: win,
+            text: String(text ?? ""),
+          });
         }
       }
     }
   }
 
-  // מיון: חדש→ישן לפי תאריך, זמן עולה, ואז לפי מכונה/חלון
+  // מיון: תאריך/שעה יורד
   rows.sort((a, b) => {
-    const d = String(b.date).localeCompare(String(a.date));
-    if (d) return d;
-    const [ah, am] = String(a.time).split(":").map(Number);
-    const [bh, bm] = String(b.time).split(":").map(Number);
-    return (ah - bh) || (am - bm) ||
-           String(a.machine).localeCompare(String(b.machine), "he") ||
-           String(a.window).localeCompare(String(b.window), "he");
+    const ka = `${a.date} ${a.time}`;
+    const kb = `${b.date} ${b.time}`;
+    return kb.localeCompare(ka);
   });
 
   return rows;
 }
 
-// מודאל פשוט
-function ensureModal() {
-  let modal = document.getElementById("log-modal");
-  if (modal) return modal;
+export function renderWarning(warnObj) {
+  const tbody = $("#warning-list");
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-  modal = document.createElement("div");
-  modal.id = "log-modal";
-  modal.innerHTML = `
-    <div class="wm-overlay" role="button" aria-label="סגור"></div>
-    <div class="wm-card" role="dialog" aria-modal="true" aria-labelledby="wm-title">
-      <div class="wm-header">
-        <div id="wm-title" class="wm-title">תוכן</div>
-        <button class="wm-close" type="button">סגור</button>
-      </div>
-      <div class="wm-body"><pre id="wm-text"></pre></div>
-    </div>`;
-  document.body.appendChild(modal);
-
-  const close = () => modal.classList.remove("show");
-  modal.querySelector(".wm-overlay").addEventListener("click", close);
-  modal.querySelector(".wm-close").addEventListener("click", close);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-
-  return modal;
-}
-
-function openModal(text, title = "תוכן") {
-  const modal = ensureModal();
-  modal.querySelector("#wm-text").textContent = text ?? "";
-  modal.querySelector("#wm-title").textContent = title;
-  modal.classList.add("show");
-}
-
-/** מציג טבלה ב־#warning-list */
-export function renderWarningsTable(serverData) {
-  const container = document.getElementById("warning-list");
-  if (!container) return;
-
-  container.classList.remove("alerts-list"); // למקרה שיש גריד כרטיסים
-  container.innerHTML = "";
-
-  const rows = flattenRows(serverData);
+  const rows = flattenWarnings(warnObj);
   if (!rows.length) {
-    container.innerHTML = '<div class="muted">אין נתונים להצגה.</div>';
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 5;
+    td.className = "cell-empty";
+    td.textContent = "אין אזהרות להצגה.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
     return;
   }
 
-  const table = document.createElement("table");
-  table.className = "logs-table";
-
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>מחשב</th>
-        <th>תאריך</th>
-        <th>שעה</th>
-        <th>חלון</th>
-        <th>טקסט</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
-  const tbody = table.querySelector("tbody");
-
-  for (const r of rows) {
+  rows.forEach((r) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${esc(r.machine)}</td>
-      <td>${esc(r.date)}</td>
-      <td>${esc(r.time)}</td>
-      <td>${esc(r.window)}</td>
-      <td class="wm-cell" style="cursor:pointer;white-space:pre-wrap">${esc(r.text)}</td>
-    `;
-    tr.querySelector(".wm-cell").addEventListener("click", () => {
-      openModal(r.text, `מחשב: ${r.machine} • ${r.date} ${r.time} • חלון: ${r.window}`);
-    });
-    tbody.appendChild(tr);
-  }
 
-  container.appendChild(table);
+    const tdMachine = document.createElement("td");
+    tdMachine.textContent = r.machine || "—";
+
+    const tdDate = document.createElement("td");
+    tdDate.textContent = r.date || "—";
+
+    const tdTime = document.createElement("td");
+    tdTime.textContent = r.time || "—";
+
+    const tdWin = document.createElement("td");
+    tdWin.textContent = r.window || "—";
+
+    const tdText = document.createElement("td");
+    tdText.className = "cell-text";               // ← לזיהוי ב-delegate
+    tdText.textContent = r.text || "—";
+    tdText.dataset.machine = r.machine || "";
+    tdText.dataset.date = r.date || "";
+    tdText.dataset.time = r.time || "";
+    tdText.dataset.win = r.window || "";
+    tdText.dataset.full = r.text || "";
+    tdText.title = r.text ? "לחץ להצגת מלוא התוכן" : "";
+
+    tr.appendChild(tdMachine);
+    tr.appendChild(tdDate);
+    tr.appendChild(tdTime);
+    tr.appendChild(tdWin);
+    tr.appendChild(tdText);
+
+    tbody.appendChild(tr);
+  });
+
+  // דיאלוג בלחיצה על תא הטקסט (delegate, פעם אחת בלבד)
+  if (!tbody.__boundDialog) {
+    tbody.addEventListener("click", (e) => {
+      const td = e.target.closest("td.cell-text");
+      if (!td) return;
+      const title = `${td.dataset.machine} • ${td.dataset.date} ${td.dataset.time} • ${td.dataset.win}`;
+      openModal({ title, content: td.dataset.full || "" });
+    });
+    tbody.__boundDialog = true;
+  }
 }
 
-/** שליפה מהשרת ואז רינדור */
-export async function fetchAndRenderWarnings() {
+/** אופציונלי: טעינה אוטומטית מהשרת אם יש לך endpoint מתאים.
+ * מוסיף תמיכה גמישה – ינסה כמה שמות נפוצים אם קיימים ב-api.
+ */
+export async function loadWarningsFromServer() {
+  let data = null;
   try {
-    const data = await api.getWarnings(); // ראה סעיף 2
-    renderWarningsTable(data);
+    if (typeof api.getAlertsFind === "function") {
+      data = await api.getAlertsFind();
+    } else if (typeof api.getWarnings === "function") {
+      data = await api.getWarnings();
+    } else if (typeof api.getAlertsWarnings === "function") {
+      data = await api.getAlertsWarnings();
+    } else {
+      // אין endpoint – פשוט לא נטעין
+      return;
+    }
+    renderWarning(data);
   } catch (e) {
-    console.error(e);
-    const container = document.getElementById("warning-list");
-    if (container) container.innerHTML = '<div class="muted">שגיאה בטעינת נתונים.</div>';
+    console.warn("loadWarningsFromServer failed:", e);
+    renderWarning({});
   }
 }

@@ -763,3 +763,175 @@ table.logs-table caption {
   padding: 6px 10px;
   cursor: pointer;
 }
+
+/* ===== Alerts: קומפקטי ונקי ===== */
+.alerts-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.alerts-toolbar .input {
+  min-width: 280px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+}
+
+.alerts-toolbar .spacer {
+  flex: 1;
+}
+
+/* טופס inline דקיק */
+.alert-form.inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+.alert-form.inline input {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  min-width: 220px;
+  outline: none;
+}
+
+.alert-form.inline input:focus {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+/* טבלת התראות/אזהרות – אחיד */
+.table-wrap.slim {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.alerts-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  table-layout: fixed;
+}
+
+.alerts-table th,
+.alerts-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  vertical-align: top;
+}
+
+.alerts-table thead th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
+}
+
+.alerts-table tbody tr:hover td {
+  background: color-mix(in oklab, var(--panel) 70%, var(--bg));
+}
+
+/* תצוגת מילות מפתח – צ׳יפים קטנים וצמודים */
+.kw-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.kw {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in oklab, var(--accent) 10%, #fff);
+  border: 1px solid var(--border);
+}
+
+.kw .x {
+  opacity: .7;
+  cursor: default;
+}
+
+/* אקשנים */
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.row-actions .btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.row-actions .btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* תא ריק */
+.cell-empty {
+  color: var(--muted);
+}
+
+/* תגית קטנה (ID) */
+.badge-id {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+
+/* המכלול של הצ'יפים + הכפתור */
+.days-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* רווח קטן ביניהם */
+}
+
+/* שורת הצ'יפים עצמה */
+.days-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  /* לא לשבור שורה */
+  gap: 8px;
+  overflow-x: auto;
+  /* גלילה אופקית אם אין מקום */
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
+  /* תתפוס את כל הרוחב הפנוי */
+  min-width: 0;
+  /* חשוב בפלקס כדי לא לדחוף שורות */
+}
+
+/* כל צ'יפ הוא פריט ברוחב תוכן בלבד */
+.day-chip {
+  flex: 0 0 auto;
+}
+
+/* הכפתור נשאר באותה שורה – לא נשבר */
+.days-topbar .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

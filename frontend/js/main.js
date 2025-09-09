@@ -1,9 +1,28 @@
 import { $, toast } from "./utils.js";
-import { createAlert, loadAlertsFromServer } from "./alerts.js";
-import { fetchAndRenderWarnings } from "./warnings.js";
+import { createAlert, renderAlerts, loadAlertsFromServer } from "./alerts.js";
+import { loadWarningsFromServer, renderWarning } from "./warnings.js";
 import { initAgent } from "./agent.js";
 import { fetchLogsAndRender, refreshMachines } from "./logs-view.js";
 import { bindNav, showPage } from "./navigation.js";
+import { startWarningsPolling } from "./warnings-box.js";
+
+
+const search = document.getElementById("alerts-search");
+if (search) {
+  search.addEventListener("input", () => {
+    const q = search.value.trim().toLowerCase();
+    const rows = document.querySelectorAll("#alerts-list tr");
+    rows.forEach(tr => {
+      const text = tr.textContent.toLowerCase();
+      tr.style.display = text.includes(q) ? "" : "none";
+    });
+  });
+}
+
+// כפתור “+ התראה חדשה” פשוט מפקסס לטופס
+document.getElementById("btn-new-alert")?.addEventListener("click", () => {
+  document.getElementById("alert-title")?.focus();
+});
 
 /** חיווי מצב הסוכן בפיל העליון */
 function setAgentIndicator(isOn) {
@@ -42,7 +61,7 @@ function bindHeaderNavBridge() {
       // טעינת נתונים לפי עמוד
       if (page === "alerts") {
         // טען גם התראות וגם אזהרות
-        Promise.all([loadAlertsFromServer(), fetchAndRenderWarnings()]).catch(() => {
+        Promise.all([loadAlertsFromServer(), loadWarningsFromServer()]).catch(() => {
           toast("שגיאה בטעינת נתונים", "error");
         });
       }
@@ -73,7 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // אחרי יצירה – רענון רשימות
     await loadAlertsFromServer();
-    await fetchAndRenderWarnings();
+    await loadWarningsFromServer();
   });
 
   // סוכן
@@ -92,12 +111,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // init
   try {
     await loadAlertsFromServer();
-    await fetchAndRenderWarnings();
+    await loadWarningsFromServer();
   } catch {
     // fallback
   }
   refreshMachines();
-
+      // התחלת פולינג: כל 10 שניות
+  startWarningsPolling(10_000);
   // דף ברירת מחדל
   showPage("home");
 

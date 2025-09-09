@@ -37,33 +37,64 @@
         </div>
         <div id="machines-strip" class="machines-strip"></div>
         <div id="machines-status" class="status muted"></div>
+
       </div>
+          <h2>התראות חדשות </h2>
+      <div id="warnings-box"></div>
+
     </section>
 
     <!-- ALERTS PAGE -->
     <section id="page-alerts" class="page section hidden">
       <header class="header">
         <h1>ניהול התראות</h1>
-        <p class="muted">צפה, צור ומחק התראות קיימות.</p>
+        <p class="muted">צור, סנן ומחק התראות. למטה תצוגת אזהרות שנמצאו.</p>
       </header>
 
-      <!-- טופס ליצירת התראה -->
-      <form id="alert-form" class="alert-form">
-        <div>
-          <label>כותרת התראה</label>
-          <input type="text" id="alert-title" placeholder="לדוגמה: הקלדת מילת מפתח" required />
-        </div>
-        <div>
-          <label>מילות מפתח (מופרדות בפסיק)</label>
-          <input type="text" id="alert-keywords" placeholder="סיסמה, אשראי, קוד" />
-        </div>
-        <button class="btn" type="submit">צור התראה</button>
+      <!-- טולבר עליון: חיפוש + יצירה -->
+      <div class="alerts-toolbar">
+        <input id="alerts-search" class="input" type="search" placeholder="חיפוש לפי כותרת/מילות מפתח…" />
+        <div class="spacer"></div>
+        <button id="btn-new-alert" class="btn">+ התראה חדשה</button>
+      </div>
+
+      <!-- טופס יצירה דקיק (inline) -->
+      <form id="alert-form" class="alert-form inline">
+        <input type="text" id="alert-title" placeholder="כותרת התראה" required />
+        <input type="text" id="alert-keywords" placeholder="מילות מפתח (מופרדות בפסיק)" />
+        <button class="btn" type="submit">צור</button>
       </form>
 
-      <!-- רשימת התראות מהשרת -->
-      <div>
-        <div id="alerts-list" class="alerts-list"></div>
-        <div id="warning-list" class="alerts-list"></div>
+      <!-- רשימת ההתראות בסגנון טבלה -->
+      <div class="table-wrap slim">
+        <table class="alerts-table" aria-label="התראות">
+          <thead>
+            <tr>
+              <th style="width: 36px;"></th>
+              <th>כותרת</th>
+              <th>מילות מפתח</th>
+              <th style="width: 100px;">פעולות</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-list"></tbody>
+        </table>
+      </div>
+
+      <!-- כותרת משנה + טבלת אזהרות -->
+      <h2 class="subhead">אזהרות שנמצאו</h2>
+      <div class="table-wrap slim">
+        <table class="alerts-table" aria-label="אזהרות">
+          <thead>
+            <tr>
+              <th style="width: 200px;">מחשב</th>
+              <th style="width: 120px;">תאריך</th>
+              <th style="width: 100px;">שעה</th>
+              <th>חלון</th>
+              <th>הקלדה</th>
+            </tr>
+          </thead>
+          <tbody id="warning-list"></tbody>
+        </table>
       </div>
     </section>
 
@@ -137,6 +168,12 @@
   </main>
 
   <div id="toast" class="toast hidden"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+      if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    }
+  </script>
 
   <script type="module" src="js/main.js"></script>
 </body>

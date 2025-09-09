@@ -62,7 +62,6 @@ function buildQuery(params) {
 export const api = {
   // מחשבים / לוגים
   getMachines: () => apiGET(`/get_target_machines_list`),
-
   getKeystrokes: ({ machine, date, start, end }) => {
     if (!machine) throw new Error("חסר פרמטר machine");
     const qs = buildQuery({
@@ -78,6 +77,8 @@ export const api = {
   getNotifications: () => apiGET(`/get_notifications`),
 
   getWarnings: () => apiGET(`/get_warnings`),
+
+  getNewWarnings: () => apiGET(`/new_warning`),
 
   createNotification: (payload) => apiPOST(`/notifications`, payload),
 

@@ -10,6 +10,7 @@ CORS(app)
 def home():
     return "KeyLogger Server is Running"
 
+
 @app.post("/api/login")
 def login():
     return controllers.handle_login(request)
@@ -25,6 +26,11 @@ def get_notifications():
 @app.post("/api/delete_notification")
 def delete_notification():
     return controllers.handle_delete_notifications(request)
+
+@app.get("/api/new_warning")
+def new_warning():
+    return controllers.handle_get_warnings()
+
 
 @app.get("/api/get_warnings")
 def get_warnings():
@@ -75,7 +81,7 @@ def send_js(filename):
 
 @app.route("/css/<path:filename>")
 def send_css(filename):
-    return send_from_directory("../frontend/css", filename)
+    return send_from_directory("../frontend", filename)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

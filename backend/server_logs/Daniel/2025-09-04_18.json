@@ -4,7 +4,7 @@
     },
     "18:26": {
         "Frontend integration guide": "לכל זה ctrlright shift\nctrlה\n",
-        "ikeylogger – app.py": "shiftupupupupupupupupupupupupupupupupupupupupupctrlב"
+        "ikeylogger – app.py": "testest"
     },
     "18:27": {
         "● script.js - ikeylogger - Visual Studio Code": "4580"
@@ -14,7 +14,7 @@
     },
     "18:29": {
         "127.0.0.1:5000": "\n",
-        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "rightleftright\nrightright<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>",
+        "127.0.0.1:5000/api/get_keystrokes?machine=daniel": "rightleftright\ntest1est<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>",
         "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-03&start=13:00&end=14:00": "rightleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleftleft<BS>4\n",
         "127.0.0.1:5000/api/get_keystrokes?machine=Daniel&date=2025-09-04&start=13:00&end=14:00": "right<BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS><BS>"
     }

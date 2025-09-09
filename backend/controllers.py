@@ -49,9 +49,16 @@ def handle_delete_notifications(request):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def handle_new_warnings():
+    try:
+        alerts = services.get_all_warnings()
+        return jsonify(alerts), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def handle_get_warnings():
     try:
-        alerts = services.get_warnings()
+        alerts = services.get_all_warnings()
         return jsonify(alerts), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
