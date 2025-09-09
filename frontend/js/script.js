@@ -52,5 +52,9 @@ const loginForm = document.getElementById("loginForm");
         login(username, password);
       });
     }
+ // 🟢 מחיקת session כשסוגרים את הטאב
+window.addEventListener("beforeunload", ()=>{
+  navigator.sendBeacon(`${API_BASE}/logout`);
+});
 
 });
