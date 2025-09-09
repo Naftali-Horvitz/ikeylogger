@@ -1,10 +1,13 @@
 import os
+from datetime import timedelta
 from flask import Flask, render_template, request, send_from_directory, redirect, url_for, session
 from flask_cors import CORS
 from backend import controllers, services, utils
 
 app = Flask(__name__, static_folder="../frontend", template_folder="../frontend")
 CORS(app)
+app.secret_key = "a9s8d7f6g5h4j3k2l1qwertyZXCVBNM"  # מפתח סודי לשמירת session
+app.permanent_session_lifetime = timedelta(minutes=1)  # תוקף של 10 דקות
 
 @app.get("/")
 def home():
@@ -56,7 +59,6 @@ def update_settings():
 def get_settings():
     return controllers.handle_get_settings()
 
-app.secret_key = "a9s8d7f6g5h4j3k2l1qwertyZXCVBNM"  # מפתח סודי לשמירת session
 
 @app.route("/home")
 def home_page():
@@ -70,18 +72,18 @@ def login_page():
         return redirect("/home")
     return render_template("login.html")
 
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect("/login")
+@app.post("/logout")
+def api_logout():
+    session.clear()  # מוחק את כל המידע מהסשן
+    return {"success": True, "message": "Logged out"}
 
 @app.route("/js/<path:filename>")
 def send_js(filename):
     return send_from_directory("../frontend/js", filename)
 
-@app.route("/css/<path:filename>")
-def send_css(filename):
-    return send_from_directory("../frontend", filename)
+@app.route("/style.css")
+def send_css():
+    return send_from_directory("../frontend", "style.css")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

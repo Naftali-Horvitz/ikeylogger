@@ -151,20 +151,6 @@ def find_warnings_in_data(machine, warnings):
                                 alerts.setdefault(file_name, {}).setdefault(k, {}).setdefault(k_k, v_v)
     if alerts:
         return alerts
-    return None
-
-def get_all_keystrokes():
-    data = {}
-    for machine in os.listdir(LOG_DIR):
-        folder = os.path.join(LOG_DIR, machine)
-        for filename in os.listdir(folder):
-            full_path = os.path.join(folder, filename)
-            with open(full_path, "r", encoding="utf-8") as f:
-                file_n = filename[:-8]
-                data[file_n] = json.load(f)
-    if data:
-        return data
-    return None
 
 def get_keystrokes(request):
     machine = request.args.get("machine")
@@ -212,4 +198,3 @@ def get_keystrokes(request):
 
     return jsonify(result)
 
-print(get_all_warnings())
