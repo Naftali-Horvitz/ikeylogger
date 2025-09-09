@@ -11,7 +11,7 @@ app.permanent_session_lifetime = timedelta(minutes=1)  # תוקף של 10 דקו
 
 @app.get("/")
 def home():
-    return "KeyLogger Server is Running"
+    return render_template('login.html')
 
 
 @app.post("/api/login")
@@ -86,4 +86,4 @@ def send_css():
     return send_from_directory("../frontend", "style.css")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=3000)

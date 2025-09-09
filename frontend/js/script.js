@@ -6,7 +6,7 @@ const LS_KEYS = {
 };
 
 // BASE של ה-API (ללא UI; ערך ברירת מחדל, שנה פה אם צריך)
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "http://127.0.0.1:3000/api";
 
 
 

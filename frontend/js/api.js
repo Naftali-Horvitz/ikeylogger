@@ -4,7 +4,7 @@
 import { normTime } from "./utils.js";
 
 // בסיס API (עדכן לפי הצורך)
-export const API_BASE = "http://127.0.0.1:5000/api";
+export const API_BASE = "http://127.0.0.1:3000/api";
 
 // --- עזר: timeout ל-fetch ---
 function withTimeout(ms = 15000) {
