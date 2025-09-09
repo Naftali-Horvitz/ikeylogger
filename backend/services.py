@@ -186,3 +186,4 @@ def get_keystrokes(request):
             out.append(json.dumps(filtered, ensure_ascii=False, indent=2))
     return out
 
+print(get_warnings())

@@ -1,5 +1,6 @@
 import { $, toast } from "./utils.js";
-import { createAlert, renderAlerts, loadAlertsFromServer } from "./alerts.js";
+import { createAlert, loadAlertsFromServer } from "./alerts.js";
+import { fetchAndRenderWarnings } from "./warnings.js";
 import { initAgent } from "./agent.js";
 import { fetchLogsAndRender, refreshMachines } from "./logs-view.js";
 import { bindNav, showPage } from "./navigation.js";
@@ -13,18 +14,14 @@ function setAgentIndicator(isOn) {
   pill.classList.toggle("on", isOn);
 }
 
-/** גשר: מקשר את כפתורי ה-Header החדשים (buttons.tablink עם data-page)
- *  למנגנון הניווט הקיים שלך (showPage + active/aria-current).
- */
+/** גשר: מקשר את כפתורי ה־Header החדשים */
 function bindHeaderNavBridge() {
   const links = document.querySelectorAll(".topnav [data-page]");
   if (!links.length) return;
 
-  // ננקה מצבי active/aria-current קיימים
   links.forEach(b => b.removeAttribute("aria-current"));
 
   links.forEach((el) => {
-    // כדי לא להיקשר פעמיים אם הפונקציה תיקרא שוב:
     if (el.__bound) return;
     el.__bound = true;
 
@@ -35,7 +32,6 @@ function bindHeaderNavBridge() {
         showPage(page);
       }
 
-      // עדכון מצב פעיל בהדר (aria-current) + תאימות לישן (.active)
       document.querySelectorAll(".topnav [data-page]").forEach((b) => b.removeAttribute("aria-current"));
       el.setAttribute("aria-current", "page");
 
@@ -43,15 +39,16 @@ function bindHeaderNavBridge() {
         a.classList.toggle("active", a.getAttribute("data-page") === page);
       });
 
-      // טעינת נתונים לפי עמוד (Lazy-ish)
+      // טעינת נתונים לפי עמוד
       if (page === "alerts") {
-        // נטען מחדש מהשרת כדי לשקף מצב עדכני
-        loadAlertsFromServer().catch(() => {/* הטוסט כבר מטופל בפנים */});
+        // טען גם התראות וגם אזהרות
+        Promise.all([loadAlertsFromServer(), fetchAndRenderWarnings()]).catch(() => {
+          toast("שגיאה בטעינת נתונים", "error");
+        });
       }
     });
   });
 
-  // סימון לשונית התחלתית לפי הדף הפעיל כרגע:
   const currentPageEl = document.querySelector('.page:not(.hidden)') || document.querySelector('#page-home');
   const currentPageId = currentPageEl?.id?.replace(/^page-/, "") || "home";
   const match = Array.from(links).find(b => b.getAttribute("data-page") === currentPageId);
@@ -59,13 +56,13 @@ function bindHeaderNavBridge() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // ניווט ישן (קישורי <a> עם data-page)
+  // ניווט ישן
   bindNav();
 
   // מחשבים
   $("#btn-refresh-machines")?.addEventListener("click", refreshMachines);
 
-  // התראות — יצירה
+  // יצירת התראה חדשה
   $("#alert-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const title = $("#alert-title")?.value.trim();
@@ -73,17 +70,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!title) return;
     await createAlert(title, keywords);
     e.target.reset();
+
+    // אחרי יצירה – רענון רשימות
+    await loadAlertsFromServer();
+    await fetchAndRenderWarnings();
   });
 
   // סוכן
   await initAgent();
-  // אחרי initAgent נוכל לעדכן את החיווי לפי כפתור ההחלפה
   const toggleBtn = $("#btn-toggle-agent");
   if (toggleBtn) {
     setAgentIndicator(toggleBtn.dataset.on === "1");
-    // נעדכן גם בלחיצה (אחרי שה-agent.js משנה את המצב)
     toggleBtn.addEventListener("click", () => {
-      // הדום מתעדכן מיידית ב-agent.js, כאן רק מסנכרנים את הפיל
       setTimeout(() => setAgentIndicator(toggleBtn.dataset.on === "1"), 0);
     });
   }
@@ -93,16 +91,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // init
   try {
-    await loadAlertsFromServer(); // טען מהשרת ונקה את הרשימה
+    await loadAlertsFromServer();
+    await fetchAndRenderWarnings();
   } catch {
-    // אם השרת לא זמין, נציג מה-LocalStorage
-    renderAlerts();
+    // fallback
   }
   refreshMachines();
 
   // דף ברירת מחדל
   showPage("home");
 
-  // גשר להדר החדש (buttons עם data-page)
+  // גשר להדר
   bindHeaderNavBridge();
 });

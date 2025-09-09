@@ -77,6 +77,8 @@ export const api = {
   // ===== התראות =====
   getNotifications: () => apiGET(`/get_notifications`),
 
+  getWarnings: () => apiGET(`/get_warnings`),
+
   createNotification: (payload) => apiPOST(`/notifications`, payload),
 
 // מחיקת התראה: שולח אובייקט { id } בגוף ל-POST /api/deletenotifications

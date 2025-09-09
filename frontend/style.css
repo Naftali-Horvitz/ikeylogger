@@ -696,3 +696,70 @@ table.logs-table caption {
   padding: 8px 12px;
   cursor: pointer;
 }
+
+#log-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+#log-modal.show {
+  display: block;
+}
+
+#log-modal .wm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+}
+
+#log-modal .wm-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  width: min(900px, 96vw);
+  max-height: 85vh;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, .15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#log-modal .wm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#log-modal .wm-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+#log-modal .wm-body {
+  padding: 12px 14px;
+  overflow: auto;
+}
+
+#log-modal pre {
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.5;
+}
+
+#log-modal .wm-close {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
